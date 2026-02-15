@@ -198,7 +198,12 @@ async function main(){
     const dTotWait = (prevTotWait==null) ? null : (totWait - prevTotWait);
     const dTotAcc  = (prevTotAcc==null) ? null : (totAcc - prevTotAcc);
 
-    const sign = (n)=> (n==null ? "—" : (n>0 ? `+${n}` : `${n}`));
+    const sign = (n)=> {
+      if(n==null) return `<span class="delta none">—</span>`;
+      if(n>0) return `<span class="delta plus">+${n}</span>`;
+      if(n<0) return `<span class="delta minus">${n}</span>`;
+      return `<span class="delta zero">0</span>`;
+    };
 
     document.getElementById('countLabel').textContent = (data.facilities||[]).length.toLocaleString('ja-JP');
     document.getElementById('kpi').innerHTML = `
