@@ -1,2 +1,0 @@
-# Nurseryschool_Availability
-保育園の入園状況トラッカー
