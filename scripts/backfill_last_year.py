@@ -96,22 +96,36 @@ def sanitize_header(header: List[str]) -> List[str]:
 
 def extract_month_from_text(text: str) -> Optional[str]:
     """
-    例: '【令和８年２月１日時点】' → 2026-02-01
+    例:
+      '【令和８年２月１日時点】' → 2026-02-01
+      'R6.4.1' → 2024-04-01
     """
     if not text:
         return None
     t = str(text)
-    z2h = str.maketrans("０１２３４５６７８９", "0123456789")
-    t = t.translate(z2h)
 
-    m = re.search(r"令和\s*([0-9]+)\s*年\s*([0-9]+)\s*月\s*1\s*日", t)
+    # 全角→半角
+    z2h = str.maketrans("０１２３４５６７８９", "0123456789")
+    t2 = t.translate(z2h)
+
+    # 1) シート名の "R6.4.1" 形式
+    m = re.search(r"\bR\s*([0-9]{1,2})\s*\.\s*([0-9]{1,2})\s*\.\s*1\b", t2, flags=re.I)
     if m:
         ry = int(m.group(1))
         mm = int(m.group(2))
-        y = 2018 + ry  # Reiwa 1 = 2019
+        y = 2018 + ry  # Reiwa 1=2019
         return date(y, mm, 1).isoformat()
 
-    m = re.search(r"([0-9]{4})\s*年\s*([0-9]{1,2})\s*月\s*1\s*日", t)
+    # 2) "令和6年4月1日" 形式
+    m = re.search(r"令和\s*([0-9]+)\s*年\s*([0-9]+)\s*月\s*1\s*日", t2)
+    if m:
+        ry = int(m.group(1))
+        mm = int(m.group(2))
+        y = 2018 + ry
+        return date(y, mm, 1).isoformat()
+
+    # 3) "2025年4月1日" 形式
+    m = re.search(r"([0-9]{4})\s*年\s*([0-9]{1,2})\s*月\s*1\s*日", t2)
     if m:
         y = int(m.group(1))
         mm = int(m.group(2))
@@ -137,25 +151,18 @@ def detect_month_from_rows(rows: List[Dict[str, str]]) -> Optional[str]:
 
 # ---------- master ----------
 def load_master() -> Dict[str, Dict[str, str]]:
-    """
-    master_facilities.csv を {facility_id(or id): row} にする
-    追加列（nearest_station, walk_minutes）もそのまま保持
-    """
     if not MASTER_CSV.exists():
         return {}
     out: Dict[str, Dict[str, str]] = {}
     with MASTER_CSV.open("r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            fid = (row.get("facility_id") or row.get("id") or "").strip()
+        for row in csv.DictReader(f):
+            fid = (row.get("facility_id") or "").strip()
             if fid:
                 out[fid] = row
     return out
 
 
-def build_map_url(name: str, ward: str, address: str = "", lat: str = "", lng: str = "") -> str:
-    if lat and lng:
-        return f"https://www.google.com/maps/search/?api=1&query={lat},{lng}"
+def build_map_url(name: str, ward: str, address: str = "") -> str:
     q = " ".join([name, address, ward, "横浜市"]).strip()
     q = re.sub(r"\s+", " ", q)
     return f"https://www.google.com/maps/search/?api=1&query={q}"
@@ -164,12 +171,12 @@ def build_map_url(name: str, ward: str, address: str = "", lat: str = "", lng: s
 # ---------- scraping ----------
 def scrape_excel_urls() -> Dict[str, List[str]]:
     """
-    横浜市ページから Excel リンク（.xls/.xlsx/.xlsm）を頑丈に拾って分類する
+    CITY_PAGE から Excel リンクを拾う。
+    月次(小さいxlsx) + 過去年度まとめ(大きいxlsx) を両方取るのが重要。
     """
     html = requests.get(CITY_PAGE, timeout=30).text
     soup = BeautifulSoup(html, "html.parser")
 
-    # 1) a[href] から「.xls系を含む」ものを全部拾う（末尾一致にしない）
     found: List[Tuple[str, str]] = []
     for a in soup.select("a[href]"):
         href = (a.get("href") or "").strip()
@@ -181,7 +188,7 @@ def scrape_excel_urls() -> Dict[str, List[str]]:
             text = (a.get_text() or "").strip()
             found.append((href_abs, text))
 
-    # 2) 本文から正規表現でも拾う（aタグ以外で埋まってる場合対策）
+    # 念のため本文からも拾う
     for u in re.findall(r"https?://[^\s\"']+\.(?:xlsx|xlsm|xls)(?:\?[^\s\"']*)?", html, flags=re.I):
         found.append((u, ""))
 
@@ -195,29 +202,40 @@ def scrape_excel_urls() -> Dict[str, List[str]]:
 
     urls: Dict[str, List[str]] = {"accept": [], "wait": [], "enrolled": []}
 
-    # 3) リンクテキストで分類
-    for u, t in uniq:
+    def kind_by_text(t: str) -> Optional[str]:
+        if not t:
+            return None
         if "入所児童" in t:
-            urls["enrolled"].append(u)
-        elif "受入可能" in t:
-            urls["accept"].append(u)
-        elif ("入所待ち" in t) or ("待ち人数" in t):
-            urls["wait"].append(u)
+            return "enrolled"
+        if "受入可能" in t:
+            return "accept"
+        if ("入所待ち" in t) or ("待ち人数" in t):
+            return "wait"
+        return None
 
-    # 4) テキストが取れない/揺れる場合の保険：URL文字列で分類
-    def push_if(kind: str, pred):
-        if urls[kind]:
-            return
+    # まずリンクテキストで分類（確度高）
+    for u, t in uniq:
+        k = kind_by_text(t)
+        if k:
+            urls[k].append(u)
+
+    # テキストが空/揺れる場合の保険：URLに入る典型IDで分類
+    # 月次: 0932=受入 0933=待ち 0934=児童
+    # 年度まとめ: 0783/0784 のような番号になることがある（ページ更新で変わっても拾えるように “受入/待ち/児童” 文字も見る）
+    def push_by_url(kind: str, pred):
         for u, _ in uniq:
             ul = u.lower()
             if pred(ul):
                 urls[kind].append(u)
 
-    push_if("accept",   lambda ul: ("受入" in ul) or ("ukire" in ul) or ("0932_" in ul))
-    push_if("wait",     lambda ul: ("待ち" in ul) or ("mati" in ul) or ("0933_" in ul) or ("0929_" in ul))
-    push_if("enrolled", lambda ul: ("児童" in ul) or ("jido" in ul) or ("0934_" in ul) or ("0923_" in ul))
+    if not urls["accept"]:
+        push_by_url("accept", lambda ul: ("0932_" in ul) or ("受入" in ul) or ("ukire" in ul))
+    if not urls["wait"]:
+        push_by_url("wait", lambda ul: ("0933_" in ul) or ("0929_" in ul) or ("待ち" in ul) or ("mati" in ul))
+    if not urls["enrolled"]:
+        push_by_url("enrolled", lambda ul: ("0934_" in ul) or ("0923_" in ul) or ("児童" in ul) or ("jido" in ul))
 
-    # 最後に重複除去
+    # 最後に重複除去（順序維持）
     for k in list(urls.keys()):
         s = set()
         out = []
@@ -228,10 +246,14 @@ def scrape_excel_urls() -> Dict[str, List[str]]:
         urls[k] = out
 
     if not urls["accept"] or not urls["wait"]:
-        sample = [u for u, _ in uniq][:10]
+        sample = [u for u, _ in uniq][:15]
         raise RuntimeError(f"Excelリンクが拾えません（候補={len(uniq)}件、例={sample}）")
 
-    print("XLSX/XLS links:", {k: len(v) for k, v in urls.items()})
+    print("XLS links found:", {k: len(v) for k, v in urls.items()})
+    for k in ("accept", "wait", "enrolled"):
+        print("  ", k, "=>")
+        for u in urls[k]:
+            print("    -", u)
     return urls
 
 
@@ -251,7 +273,7 @@ def sheet_to_rows(ws) -> List[List[Any]]:
 def find_header_index(rows: List[List[Any]]) -> Optional[int]:
     keywords = ("施設", "区", "合計", "0歳", "０歳", "1歳", "１歳", "受入", "待ち", "児童")
     best_i, best_score = None, -1
-    for i, row in enumerate(rows[:120]):
+    for i, row in enumerate(rows[:150]):
         cells = ["" if v is None else str(v) for v in row]
         nonempty = sum(1 for c in cells if c.strip() != "")
         has_kw = any(any(k in c for k in keywords) for c in cells)
@@ -264,11 +286,11 @@ def find_header_index(rows: List[List[Any]]) -> Optional[int]:
 def parse_sheet(ws) -> Tuple[Optional[str], List[Dict[str, str]]]:
     rows = sheet_to_rows(ws)
 
-    # 月をまず探す（タイトル行やシート名から）
+    # 月をまず探す（シート名 or 先頭セル群）
     month = extract_month_from_text(ws.title)
     if month is None:
-        for r in rows[:20]:
-            for v in r[:10]:
+        for r in rows[:25]:
+            for v in r[:12]:
                 month = extract_month_from_text("" if v is None else str(v))
                 if month:
                     break
@@ -294,7 +316,6 @@ def parse_sheet(ws) -> Tuple[Optional[str], List[Dict[str, str]]]:
         d = {header[i]: vals[i] if i < len(vals) else "" for i in range(len(header))}
         out.append(d)
 
-    # rows内の更新日列から月が取れれば上書き
     m2 = detect_month_from_rows(out)
     if m2:
         month = m2
@@ -304,10 +325,10 @@ def parse_sheet(ws) -> Tuple[Optional[str], List[Dict[str, str]]]:
 
 def read_xlsx(url: str) -> Dict[str, List[Dict[str, str]]]:
     """
-    xlsx 1ファイル → {month: rows} を返す（同月が複数シートなら後勝ち）
+    xlsx 1ファイル → {month: rows} を返す
     """
     print("download:", url)
-    r = requests.get(url, timeout=120)
+    r = requests.get(url, timeout=180)
     r.raise_for_status()
     wb = load_workbook(io.BytesIO(r.content), data_only=True)
 
@@ -316,7 +337,8 @@ def read_xlsx(url: str) -> Dict[str, List[Dict[str, str]]]:
         month, rows = parse_sheet(ws)
         if month and rows:
             mp[month] = rows
-    print("parsed months:", len(mp))
+
+    print("  parsed months:", len(mp), "=>", sorted(mp.keys())[:5], "...", sorted(mp.keys())[-5:])
     return mp
 
 
@@ -449,17 +471,17 @@ def build_age_groups(ar: Dict[str, str], wr: Dict[str, str], er: Dict[str, str])
 
 # ---------- main backfill ----------
 def main() -> None:
-    print("BACKFILL start. ward=", WARD_FILTER, "months_back=", MONTHS_BACK)
+    print("BACKFILL start. ward=", WARD_FILTER, "months_back=", MONTHS_BACK, "force=", FORCE)
 
     urls = scrape_excel_urls()
     master = load_master()
     target = norm(WARD_FILTER) if WARD_FILTER else None
 
-    # download + parse all candidate xlsx for each metric
     acc_by_month: Dict[str, List[Dict[str, str]]] = {}
     wai_by_month: Dict[str, List[Dict[str, str]]] = {}
     enr_by_month: Dict[str, List[Dict[str, str]]] = {}
 
+    # ここが「過去年度まとめ」も含めて読めているかが肝
     for u in urls["accept"]:
         try:
             acc_by_month.update(read_xlsx(u))
@@ -481,19 +503,23 @@ def main() -> None:
     if not acc_by_month:
         raise RuntimeError("受入可能数の月次が1つも取れませんでした")
 
-    # target months: last N months (month floors)
+    print("DEBUG months in accept:", len(acc_by_month), "range:", (min(acc_by_month.keys()), max(acc_by_month.keys())))
+
     end = month_floor(date.today())
     start = add_months(end, -(MONTHS_BACK - 1))
-    want = []
+    want: List[str] = []
     cur = start
     while cur <= end:
         want.append(iso(cur))
         cur = add_months(cur, 1)
 
+    # ※横浜市は毎年3/1時点の公開が無いので “want” のうち3月は基本 missing になる
     available = [m for m in want if m in acc_by_month]
-    print("want months:", len(want), "available:", len(available), "missing:", [m for m in want if m not in acc_by_month])
+    missing = [m for m in want if m not in acc_by_month]
+    print("want months:", len(want), "available:", len(available))
+    if missing:
+        print("missing (first 20):", missing[:20])
 
-    # months.json existing
     months_path = DATA_DIR / "months.json"
     existing_months: List[str] = []
     if months_path.exists():
@@ -502,7 +528,6 @@ def main() -> None:
         except Exception:
             existing_months = []
 
-    # generate each month
     for m in available:
         out_path = DATA_DIR / f"{m}.json"
         if out_path.exists() and not FORCE:
@@ -548,18 +573,8 @@ def main() -> None:
             name = str(ar.get(name_key, "")).strip() if name_key else ""
 
             mm = master.get(fid, {})
-
-            # master補完（住所・地図）
             address = (mm.get("address") or "").strip()
-            lat = (mm.get("lat") or "").strip()
-            lng = (mm.get("lng") or "").strip()
-            map_url = (mm.get("map_url") or "").strip() or build_map_url(name, ward, address, lat, lng)
-
-            # ★ 追加：最寄り駅・徒歩
-            nearest_station = (mm.get("nearest_station") or "").strip()
-            walk_minutes_raw = (mm.get("walk_minutes") or "").strip()
-            wm_int = to_int(walk_minutes_raw) if walk_minutes_raw != "" else None
-            walk_minutes: Any = wm_int if wm_int is not None else walk_minutes_raw
+            map_url = (mm.get("map_url") or "").strip() or build_map_url(name, ward, address)
 
             tot_accept = get_total(ar)
             tot_wait = get_total(wr) if wr else None
@@ -569,16 +584,11 @@ def main() -> None:
             age_groups, ages_0_5 = build_age_groups(ar, wr, er)
 
             facilities.append({
-                "id": fid,
+                "id": str(fid),
                 "name": name,
                 "ward": ward,
-
-                # master由来
                 "address": address,
                 "map_url": map_url,
-                "nearest_station": nearest_station,
-                "walk_minutes": walk_minutes,
-
                 "updated": m,
                 "totals": {
                     "accept": tot_accept,
@@ -598,7 +608,6 @@ def main() -> None:
         )
         print("wrote:", out_path.name, "facilities:", len(facilities))
 
-    # update months.json
     ms = set(existing_months)
     for m in available:
         p = DATA_DIR / f"{m}.json"
