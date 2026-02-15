@@ -1,46 +1,42 @@
 /* =========================================
    Yokohama Nursery Availability - Light gray UI
-   Conditions:
-   - Background: light gray
-   - Text: black
-   - Delta (+/-) colors: keep
-   - Links: navy
+   Fixes:
+   - Page header is NOT sticky (table header is sticky)
+   - Text is black everywhere
+   - Links are navy
+   - Delta colors kept
+   - Table header sticky works inside scroll container
+   - Styles apply to BOTH #tbl (list) and #hist (facility)
    ========================================= */
 
 * { box-sizing: border-box; }
 
 :root{
-  /* Base */
-  --bg: #f3f4f6;              /* 薄いグレー（ページ背景） */
-  --surface: #ffffff;         /* カード/ヘッダ/テーブル背景 */
-  --text: #111111;            /* 基本文字：黒 */
-  --muted: #555555;           /* 補助文字 */
-  --border: #e5e7eb;          /* 枠線 */
+  --bg: #f3f4f6;       /* page background: light gray */
+  --surface: #ffffff;  /* cards/tables */
+  --text: #111111;     /* base text: black */
+  --muted: #555555;
+  --border: #e5e7eb;
 
-  /* Header / table */
-  --header-bg: rgba(255,255,255,.92);
   --thead-bg: #f8fafc;
   --row-alt: #fafafa;
 
-  /* Links (navy) */
-  --link: #0b2a6f;
+  --link: #0b2a6f;      /* navy */
   --link-hover: #061a43;
 
-  /* Delta colors (keep) */
-  --delta-plus: #d11;         /* + は赤 */
-  --delta-minus: #06c;        /* - は青 */
+  --delta-plus: #d11;   /* keep */
+  --delta-minus: #06c;
   --delta-zero: #555;
   --delta-none: #999;
 
-  /* Accents */
   --pill-bg: #f3f6ff;
   --pill-border: #dfe7ff;
 }
 
-/* Page */
+/* Page base */
 html, body{
-  background: var(--bg);
-  color: var(--text);
+  background: var(--bg) !important;
+  color: var(--text) !important;
 }
 
 body{
@@ -50,11 +46,11 @@ body{
 
 /* Links */
 a, a:visited{
-  color: var(--link);
+  color: var(--link) !important;
   text-decoration: underline;
 }
 a:hover, a:focus{
-  color: var(--link-hover);
+  color: var(--link-hover) !important;
 }
 
 /* Layout */
@@ -64,22 +60,24 @@ a:hover, a:focus{
   padding: 0 16px;
 }
 
+/* IMPORTANT: page header is NOT sticky */
 header{
   padding: 20px 16px;
   border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  background: var(--header-bg);
-  backdrop-filter: blur(10px);
+  position: static !important;   /* ←ここが重要 */
+  top: auto !important;
+  background: transparent;
+  backdrop-filter: none;
 }
 
 h1{
   font-size: 20px;
   margin: 0 0 6px 0;
+  color: var(--text) !important;
 }
 
 .sub{
-  color: var(--muted);
+  color: var(--muted) !important;
   font-size: 13px;
 }
 
@@ -92,40 +90,89 @@ h1{
 
 /* Inputs */
 input, select, button{
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text);
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
   border-radius: 12px;
   padding: 10px 12px;
   font-size: 14px;
 }
 
 button{ cursor: pointer; }
-button:hover{ border-color: #cbd5e1; }
+button:hover{ border-color: #cbd5e1 !important; }
 
 /* Cards */
 .card{
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
   border-radius: 18px;
   padding: 14px;
   margin: 14px 0;
   box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  color: var(--text) !important;
 }
 
-/* Table */
+/* KPI pills: force black text (delta keeps its own color) */
+.kpi{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.kpi .pill{
+  background: var(--pill-bg) !important;
+  border: 1px solid var(--pill-border) !important;
+  color: var(--text) !important;     /* ←黒固定 */
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.kpi .pill *:not(.delta){
+  color: var(--text) !important;     /* ←中の文字も黒固定 */
+}
+
+/* Badge / small text */
+.badge{
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border) !important;
+  font-size: 12px;
+  color: var(--muted) !important;
+  background: var(--surface) !important;
+}
+
+.small{
+  font-size: 12px;
+  color: var(--muted) !important;
+}
+
+.footer{
+  padding: 24px 16px;
+  color: var(--muted) !important;
+  font-size: 12px;
+}
+
+/* ===== Tables: applies to both list and facility ===== */
+
+/* Make table area scroll so header can stick INSIDE it */
 .tablewrap{
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--surface);
+  border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+
+  /* ここが大事：内部スクロールを発生させる */
+  max-height: 70vh;
 }
 
 table{
   width: 100%;
   border-collapse: collapse;
   min-width: 980px;
-  background: var(--surface);
+  background: var(--surface) !important;
+  color: var(--text) !important;
 }
 
 th, td{
@@ -134,131 +181,52 @@ th, td{
   vertical-align: top;
 }
 
-th{
+/* Sticky header row for BOTH tables */
+#tbl thead th,
+#hist thead th{
   position: sticky;
   top: 0;
-  background: var(--thead-bg);
+  z-index: 3;
+  background: var(--thead-bg) !important;
+  color: var(--muted) !important;
   text-align: left;
   font-weight: 600;
   font-size: 12px;
-  color: var(--muted);
 }
 
-td{
+#tbl td, #hist td{
   font-size: 13px;
-  color: var(--text);
+  color: var(--text) !important;
 }
 
-tbody tr:nth-child(even){
-  background: var(--row-alt);
+#tbl tbody tr:nth-child(even),
+#hist tbody tr:nth-child(even){
+  background: var(--row-alt) !important;
 }
 
-/* Pills / badges */
-.badge{
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--muted);
-  background: var(--surface);
-}
-
-.kpi{
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.kpi .pill{
-  background: var(--pill-bg);
-  border: 1px solid var(--pill-border);
-  color: var(--text);
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-}
-
-.small{
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.footer{
-  padding: 24px 16px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-/* Delta (month-over-month) */
+/* Delta */
 .delta{
   font-variant-numeric: tabular-nums;
   font-weight: 700;
 }
-.delta.plus  { color: var(--delta-plus); }
-.delta.minus { color: var(--delta-minus); }
-.delta.zero  { color: var(--delta-zero); }
-.delta.none  { color: var(--delta-none); }
-/* KPI文字色を黒に固定（増減の色はdeltaクラスで維持） */
-.kpi .pill{
-  color: #111 !important;
-}
-.kpi .pill *:not(.delta){
-  color: #111 !important;
-}
-/* ===== Sticky table header: reliable ===== */
-.tablewrap{
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  position: relative;
-  background: var(--surface);
-}
+.delta.plus  { color: var(--delta-plus) !important; }
+.delta.minus { color: var(--delta-minus) !important; }
+.delta.zero  { color: var(--delta-zero) !important; }
+.delta.none  { color: var(--delta-none) !important; }
 
-/* sticky は th に対して有効、背景が透明だと下が透けるので背景を付ける */
-#tbl thead th{
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  background: var(--thead-bg);
-}
-
-/* もしヘッダー（sticky）が上にあるなら、重なる分だけ top をずらす（必要時のみ） */
-/* headerがstickyで高さがある場合、下の値を 0→72px などに調整 */
-/* #tbl thead th{ top: 72px; } */
-/* ===== Mobile responsive ===== */
+/* ===== Mobile ===== */
 @media (max-width: 768px){
   h1{ font-size: 18px; }
+
   .controls{ gap: 8px; }
   input, select, button{ width: 100%; }
+
   .badge{ width: 100%; }
 
-  /* KPIは縦積み */
   .kpi{ gap: 8px; }
   .kpi .pill{ width: 100%; }
 
-  /* 住所/地図を縦に */
-  .detailgrid{
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
-    margin-top: 12px;
-  }
-
-  /* テーブルは横スクロール（ヘッダー固定は維持） */
-  .tablewrap{ overflow-x: auto; }
+  /* Table: still scrollable */
+  .tablewrap{ max-height: 65vh; }
   table{ min-width: 900px; }
 }
-
-/* PCでは2カラムで表示（園詳細の住所/地図） */
-.detailgrid{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 12px;
-}
-
-/* 園詳細の戻るリンク */
-.topbar{ margin-bottom: 6px; }
-.backlink{ font-size: 13px; }
-.h2{ font-size: 14px; margin: 0 0 10px 0; }
-
