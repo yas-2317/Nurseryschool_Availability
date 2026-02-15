@@ -20,6 +20,24 @@ DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 WARD_FILTER = "港北区"  # 必要ならここを変更（全区にしたいなら None にしてもOK）
+def norm(s: str) -> str:
+    if s is None:
+        return ""
+    # 全角スペース等を潰す
+    return str(s).replace("　", " ").strip()
+
+def guess_ward_key(row: dict) -> str | None:
+    # よくある候補を優先
+    candidates = ["施設所在区", "所在区", "区名", "区"]
+    for k in candidates:
+        if k in row:
+            return k
+    # それでも無ければ「区」を含む列を探す
+    for k in row.keys():
+        if "区" in k:
+            return k
+    return None
+
 
 def to_int(x: Any) -> Optional[int]:
     if x is None: return None
@@ -78,6 +96,10 @@ def main():
     accept_rows = read_csv(urls["accept"])
     wait_rows   = read_csv(urls["wait"])
     enrolled_rows = read_csv(urls["enrolled"]) if "enrolled" in urls else []
+    # --- ward key detection & debug ---
+    ward_key = guess_ward_key(accept_rows[0]) if accept_rows else None
+    print("Detected ward_key:", ward_key)
+    print("Accept columns:", list(accept_rows[0].keys()) if accept_rows else "NO ROWS")
 
     month = detect_month(accept_rows)
 
@@ -85,9 +107,10 @@ def main():
 
     facilities=[]
     for fid, ar in A.items():
-        ward = (ar.get("施設所在区") or "").strip()
-        if WARD_FILTER and ward != WARD_FILTER:
+        ward = norm(ar.get(ward_key) if ward_key else "")
+        if WARD_FILTER and ward != norm(WARD_FILTER):
             continue
+
 
         wr = W.get(fid, {})
         er = E.get(fid, {})
@@ -125,6 +148,8 @@ def main():
             "totals": {"accept": tot_accept, "wait": tot_wait, "enrolled": tot_enr, "capacity": tot_cap, "wait_per_capacity": tot_ratio},
             "ages": ages
         })
+if len(facilities) == 0:
+    raise RuntimeError("施設が0件です（区フィルタ or CSV列名/形式が想定と違う可能性）。コミットせず停止します。")
 
     (DATA_DIR / f"{month}.json").write_text(
         json.dumps({"month": month, "ward": (WARD_FILTER or "横浜市"), "facilities": facilities}, ensure_ascii=False, indent=2),
