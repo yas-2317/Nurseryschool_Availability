@@ -158,26 +158,76 @@ def build_map_url(name: str, ward: str, address: str = "") -> str:
 # ---------- scraping ----------
 def scrape_excel_urls() -> Dict[str, List[str]]:
     """
-    横浜市ページから .xlsx リンクを拾う。
-    textで受入/待ち/児童 を分類して返す（重複除去）。
+    横浜市ページから Excel リンク（.xls/.xlsx/.xlsm）を頑丈に拾って分類する
     """
     html = requests.get(CITY_PAGE, timeout=30).text
     soup = BeautifulSoup(html, "html.parser")
 
+    # 1) a[href] から「.xls系を含む」ものを全部拾う（末尾一致にしない）
+    found: List[Tuple[str, str]] = []
+    for a in soup.select("a[href]"):
+        href = (a.get("href") or "").strip()
+        if not href:
+            continue
+        href_abs = href if href.startswith("http") else requests.compat.urljoin(CITY_PAGE, href)
+        href_l = href_abs.lower()
+        if (".xlsx" in href_l) or (".xlsm" in href_l) or (".xls" in href_l):
+            text = (a.get_text() or "").strip()
+            found.append((href_abs, text))
+
+    # 2) 念のため、本文から正規表現でも拾う（aタグ以外で埋まってる場合対策）
+    for u in re.findall(r"https?://[^\s\"']+\.(?:xlsx|xlsm|xls)(?:\?[^\s\"']*)?", html, flags=re.I):
+        found.append((u, ""))
+
+    # 重複除去（順序維持）
+    seen = set()
+    uniq: List[Tuple[str, str]] = []
+    for u, t in found:
+        if u not in seen:
+            seen.add(u)
+            uniq.append((u, t))
+
     urls: Dict[str, List[str]] = {"accept": [], "wait": [], "enrolled": []}
-    for a in soup.select("a[href$='.xlsx']"):
-        href = a.get("href", "").strip()
-        text = (a.get_text() or "").strip()
 
-        if not href.startswith("http"):
-            href = requests.compat.urljoin(CITY_PAGE, href)
+    # 3) まずリンクテキストで分類（ページ上は「受入可能数（エクセル）」等と明示されている） :contentReference[oaicite:1]{index=1}
+    for u, t in uniq:
+        if "入所児童" in t:
+            urls["enrolled"].append(u)
+        elif "受入可能" in t:
+            urls["accept"].append(u)
+        elif ("入所待ち" in t) or ("待ち人数" in t):
+            urls["wait"].append(u)
 
-        if "受入可能" in text:
-            urls["accept"].append(href)
-        elif "入所待ち" in text or "待ち人数" in text:
-            urls["wait"].append(href)
-        elif "入所児童" in text:
-            urls["enrolled"].append(href)
+    # 4) テキストが取れない/揺れる場合の保険：URL文字列で分類（ファイル名に番号が入ることが多い）
+    def push_if(kind: str, pred):
+        if urls[kind]:
+            return
+        for u, _ in uniq:
+            ul = u.lower()
+            if pred(ul):
+                urls[kind].append(u)
+
+    push_if("accept",   lambda ul: ("受入" in ul) or ("ukire" in ul) or ("0932_" in ul))
+    push_if("wait",     lambda ul: ("待ち" in ul) or ("mati" in ul) or ("0933_" in ul) or ("0929_" in ul))
+    push_if("enrolled", lambda ul: ("児童" in ul) or ("jido" in ul) or ("0934_" in ul) or ("0923_" in ul))
+
+    # 最後に重複除去
+    for k in list(urls.keys()):
+        s = set()
+        out = []
+        for u in urls[k]:
+            if u not in s:
+                s.add(u)
+                out.append(u)
+        urls[k] = out
+
+    if not urls["accept"] or not urls["wait"]:
+        # デバッグ用に候補を少し出す
+        sample = [u for u, _ in uniq][:10]
+        raise RuntimeError(f"Excelリンクが拾えません（候補={len(uniq)}件、例={sample}）")
+
+    print("XLSX/XLS links:", {k: len(v) for k, v in urls.items()})
+    return urls
 
     # unique preserve order
     for k in list(urls.keys()):
