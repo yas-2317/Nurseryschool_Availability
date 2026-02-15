@@ -24,3 +24,20 @@ html, body { background:#fff !important; color:#111 !important; }
 header, main, .container, .card, table { background:#fff !important; }
 thead th { background:#fafafa !important; }
 tbody tr:nth-child(even){ background:#fcfcfc !important; }
+/* Links */
+a, a:visited {
+  color: #0b2a6f; /* 紺 */
+  text-decoration: underline;
+}
+a:hover, a:focus {
+  color: #061a43;
+}
+/* Delta (month-over-month) */
+.delta {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.delta.plus  { color: #d11; } /* + は赤 */
+.delta.minus { color: #06c; } /* - は青 */
+.delta.zero  { color: #555; }
+.delta.none  { color: #999; }
