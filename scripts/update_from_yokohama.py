@@ -69,12 +69,14 @@ def read_csv_from_url(url: str) -> List[Dict[str, str]]:
 def scrape_csv_urls() -> Dict[str, str]:
     html = requests.get(DATASET_PAGE, timeout=30).text
     soup = BeautifulSoup(html, "html.parser")
+
     links = [a.get("href", "") for a in soup.select("a[href]") if a.get("href", "").endswith(".csv")]
     if not links:
         links = re.findall(r"https?://[^\s\"']+\.csv", html)
     links = list(dict.fromkeys(links))
 
     best: Dict[str, str] = {}
+
     # 既知ID（あるなら最優先）
     for url in links:
         if "0926_" in url:
@@ -83,8 +85,20 @@ def scrape_csv_urls() -> Dict[str, str]:
             best["wait"] = url
 
     # キーワード推定（保険）
-   if "accept" not in best:
-    for url in links:
-        if ("受入" in url) or ("入所可能" in url):
-            best["accept"] = url
-            break
+    if "accept" not in best:
+        for url in links:
+            if ("受入" in url) or ("入所可能" in url):
+                best["accept"] = url
+                break
+
+    if "wait" not in best:
+        for url in links:
+            if "待ち" in url:
+                best["wait"] = url
+                break
+
+    if "accept" not in best or "wait" not in best:
+        raise RuntimeError("CSVリンク抽出に失敗（ページ仕様変更の可能性）")
+
+    print("CSV URLs:", best)
+    return best
