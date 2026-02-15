@@ -82,17 +82,70 @@ async function main(){
   const months = await loadJSON('data/months.json');
   const ms = (months.months||[]).slice().sort().reverse(); // newest first
 
-  const rows=[];
+  const rowsHtml=[];
   let latest=null;
+  let prev=null;
+  let latestMonth=null;
+  let prevMonth=null;
 
+  // newest -> older の順に見て、最初に見つかったのが latest、次が prev
   for(const m of ms){
     const d = await loadJSON(`data/${m}.json`);
     const f = (d.facilities||[]).find(x=>String(x.id)===String(id));
-    if(f){
-      latest = latest || f;
-      rows.push(row(m,f));
+    if(!f) continue;
+
+    if(!latest){
+      latest = f;
+      latestMonth = m;
+    }else if(!prev){
+      prev = f;
+      prevMonth = m;
     }
+    rowsHtml.push(row(m,f));
   }
+
+  if(!latest) throw new Error('対象施設が見つかりませんでした');
+
+  document.getElementById('title').textContent = latest.name;
+  document.title = latest.name + ' | 園の詳細';
+
+  const addr = safeStr(latest.address||'');
+  const map = safeStr(latest.map_url||'');
+  const link = map ? `<a href="${map}" target="_blank" rel="noopener">Google Map</a>` : '';
+
+  // 差分（prev がある時だけ出す）
+  function sign(n){
+    if (n == null) return "—";
+    if (n > 0) return `+${n}`;
+    return `${n}`;
+  }
+  const dWait = prev ? (Number(latest.totals?.wait||0) - Number(prev.totals?.wait||0)) : null;
+  const dAcc  = prev ? (Number(latest.totals?.accept||0) - Number(prev.totals?.accept||0)) : null;
+
+  const deltaHtml = prev ? `
+    <div class="kpi" style="margin-top:8px">
+      <div class="pill">前年差分（${safeStr(latestMonth)} → ${safeStr(prevMonth)}）</div>
+      <div class="pill">入所待ち：${sign(dWait)}</div>
+      <div class="pill">受入可能：${sign(dAcc)}</div>
+    </div>
+  ` : `<div class="small" style="margin-top:8px">※ 前月データが無いため差分は表示できません。</div>`;
+
+  document.getElementById('basic').innerHTML = `
+    <div class="kpi">
+      <div class="pill">施設番号：${safeStr(latest.id)}</div>
+      <div class="pill">区：${safeStr(latest.ward)}</div>
+      <div class="pill">最新月：${safeStr(latest.updated)}</div>
+    </div>
+    ${deltaHtml}
+    <div style="margin-top:10px">
+      <div><b>住所</b>：${addr || '（未設定）'}</div>
+      <div><b>地図</b>：${link || '（未設定）'}</div>
+    </div>
+  `;
+
+  document.querySelector('#hist tbody').innerHTML = rowsHtml.join('');
+}
+
 
   if(!latest) throw new Error('対象施設が見つかりませんでした');
 
