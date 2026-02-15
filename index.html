@@ -107,7 +107,7 @@ function sortFacilities(arr, mode){
 }
 
 async function main(){
-  const months = await loadJSON('..data/months.json');
+  const months = await loadJSON('data/months.json');
   const ms = months.months||[];
   const sel = document.getElementById('monthSelect');
   sel.innerHTML = ms.map(m=>`<option value="${m}">${m}</option>`).join('');
@@ -117,7 +117,7 @@ async function main(){
 
   async function render(){
     const month = sel.value;
-    const data = await loadJSON(`..data/${month}.json`);
+    const data = await loadJSON(`data/${month}.json`);
     document.getElementById('monthLabel').textContent = month;
 
     const totWait = (data.facilities||[]).reduce((s,f)=>s+Number(f.totals?.wait||0),0);
