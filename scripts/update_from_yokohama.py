@@ -76,3 +76,10 @@ def detect_month(rows: List[Dict[str, str]]) -> str:
     """
     if rows:
         for k in ("更新日", "更新年月日", "更新日時", "更新年月"):
+            if k in rows[0] and norm(rows[0].get(k)):
+                v = norm(rows[0].get(k))[:10]
+                # 2026/02/01 形式も想定
+                v = v.replace("/", "-")
+                return v
+    today = date.today()
+    return date(today.year, today.month, 1).isoformat()
