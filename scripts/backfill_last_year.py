@@ -127,7 +127,6 @@ def detect_month_from_rows(rows: List[Dict[str, str]]) -> Optional[str]:
         v = str(rows[0].get(k, "")).strip()
         if v:
             v = v[:10].replace("/", "-")
-            # だいたい "YYYY-MM-DD" で来る想定。月初へ丸める
             try:
                 y, m, _ = v.split("-")
                 return date(int(y), int(m), 1).isoformat()
@@ -138,18 +137,25 @@ def detect_month_from_rows(rows: List[Dict[str, str]]) -> Optional[str]:
 
 # ---------- master ----------
 def load_master() -> Dict[str, Dict[str, str]]:
+    """
+    master_facilities.csv を {facility_id(or id): row} にする
+    追加列（nearest_station, walk_minutes）もそのまま保持
+    """
     if not MASTER_CSV.exists():
         return {}
     out: Dict[str, Dict[str, str]] = {}
     with MASTER_CSV.open("r", encoding="utf-8-sig", newline="") as f:
-        for row in csv.DictReader(f):
-            fid = (row.get("facility_id") or "").strip()
+        reader = csv.DictReader(f)
+        for row in reader:
+            fid = (row.get("facility_id") or row.get("id") or "").strip()
             if fid:
                 out[fid] = row
     return out
 
 
-def build_map_url(name: str, ward: str, address: str = "") -> str:
+def build_map_url(name: str, ward: str, address: str = "", lat: str = "", lng: str = "") -> str:
+    if lat and lng:
+        return f"https://www.google.com/maps/search/?api=1&query={lat},{lng}"
     q = " ".join([name, address, ward, "横浜市"]).strip()
     q = re.sub(r"\s+", " ", q)
     return f"https://www.google.com/maps/search/?api=1&query={q}"
@@ -175,7 +181,7 @@ def scrape_excel_urls() -> Dict[str, List[str]]:
             text = (a.get_text() or "").strip()
             found.append((href_abs, text))
 
-    # 2) 念のため、本文から正規表現でも拾う（aタグ以外で埋まってる場合対策）
+    # 2) 本文から正規表現でも拾う（aタグ以外で埋まってる場合対策）
     for u in re.findall(r"https?://[^\s\"']+\.(?:xlsx|xlsm|xls)(?:\?[^\s\"']*)?", html, flags=re.I):
         found.append((u, ""))
 
@@ -189,7 +195,7 @@ def scrape_excel_urls() -> Dict[str, List[str]]:
 
     urls: Dict[str, List[str]] = {"accept": [], "wait": [], "enrolled": []}
 
-    # 3) まずリンクテキストで分類（ページ上は「受入可能数（エクセル）」等と明示されている） :contentReference[oaicite:1]{index=1}
+    # 3) リンクテキストで分類
     for u, t in uniq:
         if "入所児童" in t:
             urls["enrolled"].append(u)
@@ -198,7 +204,7 @@ def scrape_excel_urls() -> Dict[str, List[str]]:
         elif ("入所待ち" in t) or ("待ち人数" in t):
             urls["wait"].append(u)
 
-    # 4) テキストが取れない/揺れる場合の保険：URL文字列で分類（ファイル名に番号が入ることが多い）
+    # 4) テキストが取れない/揺れる場合の保険：URL文字列で分類
     def push_if(kind: str, pred):
         if urls[kind]:
             return
@@ -222,27 +228,10 @@ def scrape_excel_urls() -> Dict[str, List[str]]:
         urls[k] = out
 
     if not urls["accept"] or not urls["wait"]:
-        # デバッグ用に候補を少し出す
         sample = [u for u, _ in uniq][:10]
         raise RuntimeError(f"Excelリンクが拾えません（候補={len(uniq)}件、例={sample}）")
 
     print("XLSX/XLS links:", {k: len(v) for k, v in urls.items()})
-    return urls
-
-    # unique preserve order
-    for k in list(urls.keys()):
-        seen = set()
-        out = []
-        for u in urls[k]:
-            if u not in seen:
-                seen.add(u)
-                out.append(u)
-        urls[k] = out
-
-    if not urls["accept"] or not urls["wait"]:
-        raise RuntimeError("Excelリンクが拾えません（ページ仕様変更の可能性）")
-
-    print("XLSX links:", {k: len(v) for k, v in urls.items()})
     return urls
 
 
@@ -423,7 +412,6 @@ def get_age_value(row: Dict[str, str], age: int) -> Optional[int]:
 
 
 def build_age_groups(ar: Dict[str, str], wr: Dict[str, str], er: Dict[str, str]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-    # 0-5 internal
     ages_0_5: Dict[str, Dict[str, Any]] = {}
     for i in range(6):
         a = get_age_value(ar, i)
@@ -560,8 +548,18 @@ def main() -> None:
             name = str(ar.get(name_key, "")).strip() if name_key else ""
 
             mm = master.get(fid, {})
+
+            # master補完（住所・地図）
             address = (mm.get("address") or "").strip()
-            map_url = (mm.get("map_url") or "").strip() or build_map_url(name, ward, address)
+            lat = (mm.get("lat") or "").strip()
+            lng = (mm.get("lng") or "").strip()
+            map_url = (mm.get("map_url") or "").strip() or build_map_url(name, ward, address, lat, lng)
+
+            # ★ 追加：最寄り駅・徒歩
+            nearest_station = (mm.get("nearest_station") or "").strip()
+            walk_minutes_raw = (mm.get("walk_minutes") or "").strip()
+            wm_int = to_int(walk_minutes_raw) if walk_minutes_raw != "" else None
+            walk_minutes: Any = wm_int if wm_int is not None else walk_minutes_raw
 
             tot_accept = get_total(ar)
             tot_wait = get_total(wr) if wr else None
@@ -574,8 +572,13 @@ def main() -> None:
                 "id": fid,
                 "name": name,
                 "ward": ward,
+
+                # master由来
                 "address": address,
                 "map_url": map_url,
+                "nearest_station": nearest_station,
+                "walk_minutes": walk_minutes,
+
                 "updated": m,
                 "totals": {
                     "accept": tot_accept,
