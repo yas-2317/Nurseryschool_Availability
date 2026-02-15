@@ -1,10 +1,9 @@
-name: Update nursery data (monthly)
+name: Update nursery data
 
 on:
+  workflow_dispatch:
   schedule:
-    # 毎月2日 00:30 UTC (= JST 09:30)
     - cron: "30 0 2 * *"
-  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -25,13 +24,16 @@ jobs:
           pip install requests beautifulsoup4
 
       - name: Update data
+        env:
+          WARD_FILTER: "港北区"
         run: |
-          python scripts/update_from_yokohama.py
+          python -u scripts/update_from_yokohama.py
+          ls -la data || true
 
       - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/*.json data/months.json
+          git add data
           git commit -m "Update nursery data" || echo "No changes"
           git push
