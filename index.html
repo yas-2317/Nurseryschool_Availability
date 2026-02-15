@@ -28,7 +28,7 @@
 <main class="container">
   <div class="card">
     <div class="kpi" id="kpi"></div>
-    <div class="small">住所・公式定員などは <code>data/master_facilities.csv</code> を埋めると表示できます。現状は住所空欄、地図は園名検索リンクです。</div>
+    <div class="small">住所などは <code>data/master_facilities.csv</code> を埋めると表示できます。地図は園名検索リンクです。</div>
   </div>
 
   <div class="card tablewrap">
@@ -39,14 +39,10 @@
           <th style="min-width:220px;">住所 / 地図</th>
           <th>受入可能（合計）</th>
           <th>入所待ち（合計）</th>
-          <th>定員相当（合計）</th>
-          <th>入所待ち/定員相当（合計）</th>
           <th class="agecol">0歳 受入</th><th class="agecol">0歳 待ち</th>
           <th class="agecol">1歳 受入</th><th class="agecol">1歳 待ち</th>
           <th class="agecol">2歳 受入</th><th class="agecol">2歳 待ち</th>
-          <th class="agecol">3歳 受入</th><th class="agecol">3歳 待ち</th>
-          <th class="agecol">4歳 受入</th><th class="agecol">4歳 待ち</th>
-          <th class="agecol">5歳 受入</th><th class="agecol">5歳 待ち</th>
+          <th class="agecol">3〜5歳 受入</th><th class="agecol">3〜5歳 待ち</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -54,7 +50,7 @@
   </div>
 
   <div class="footer">
-    出典：横浜市「保育所等の入所状況（毎月1日時点）」の公開データを加工（本サイトは非公式）。更新自動化は README の手順を参照。
+    出典：横浜市「保育所等の入所状況（毎月1日時点）」の公開データを加工（本サイトは非公式）。
   </div>
 </main>
 
@@ -70,27 +66,49 @@ function setAgeColsVisible(v){
   document.getElementById('toggleCols').textContent = v ? '年齢別列：非表示' : '年齢別列：表示';
 }
 
+function getGroups(f){
+  // 新スキーマ優先：age_groups（0,1,2,3-5）
+  if(f.age_groups) return f.age_groups;
+
+  // 旧スキーマ互換：ages（0〜5）から3-5を合算して作る
+  const ages = f.ages || f.ages_0_5 || {};
+  function v(k, field){ return ages[k]?.[field]; }
+  function sum3(field){
+    const a = Number(v('3',field) ?? 0);
+    const b = Number(v('4',field) ?? 0);
+    const c = Number(v('5',field) ?? 0);
+    // 3/4/5 が全部 null/undefined の可能性もあるので、値が全滅なら空にする
+    const hasAny = (v('3',field)!=null) || (v('4',field)!=null) || (v('5',field)!=null);
+    return hasAny ? (a+b+c) : null;
+  }
+  return {
+    "0": {accept: v('0','accept'), wait: v('0','wait')},
+    "1": {accept: v('1','accept'), wait: v('1','wait')},
+    "2": {accept: v('2','accept'), wait: v('2','wait')},
+    "3-5": {accept: sum3('accept'), wait: sum3('wait')}
+  };
+}
+
 function rowHTML(f){
   const addr = safeStr(f.address||'');
   const map = safeStr(f.map_url||'');
   const link = map ? `<a href="${map}" target="_blank" rel="noopener">Google Map</a>` : '';
   const addrBlock = addr ? `${addr}<br>${link}` : `${link}`;
-  const ages = f.ages||{};
-  function acc(i){ return fmt(ages[i]?.accept); }
-  function wai(i){ return fmt(ages[i]?.wait); }
+
+  const g = getGroups(f);
+
+  function acc(k){ return fmt(g?.[k]?.accept); }
+  function wai(k){ return fmt(g?.[k]?.wait); }
+
   return `<tr>
     <td><a href="facility.html?id=${encodeURIComponent(f.id)}">${safeStr(f.name)}</a><div class="small">施設番号：${safeStr(f.id)}</div></td>
     <td>${addrBlock}</td>
     <td>${fmt(f.totals?.accept)}</td>
     <td>${fmt(f.totals?.wait)}</td>
-    <td>${fmt(f.totals?.capacity)}</td>
-    <td>${fmtPct(f.totals?.wait_per_capacity)}</td>
     <td class="agecol">${acc('0')}</td><td class="agecol">${wai('0')}</td>
     <td class="agecol">${acc('1')}</td><td class="agecol">${wai('1')}</td>
     <td class="agecol">${acc('2')}</td><td class="agecol">${wai('2')}</td>
-    <td class="agecol">${acc('3')}</td><td class="agecol">${wai('3')}</td>
-    <td class="agecol">${acc('4')}</td><td class="agecol">${wai('4')}</td>
-    <td class="agecol">${acc('5')}</td><td class="agecol">${wai('5')}</td>
+    <td class="agecol">${acc('3-5')}</td><td class="agecol">${wai('3-5')}</td>
   </tr>`;
 }
 
@@ -107,17 +125,19 @@ function sortFacilities(arr, mode){
 }
 
 async function main(){
-  const months = await loadJSON('data/months.json');
-  const ms = months.months||[];
+  const months = await loadJSON('../data/months.json');
+  const ms = (months.months||[]).slice().sort(); // ISO日付なので sort で昇順
   const sel = document.getElementById('monthSelect');
   sel.innerHTML = ms.map(m=>`<option value="${m}">${m}</option>`).join('');
-  sel.value = ms[0];
+
+  // ★ 重要：最新月をデフォルトにする（先頭だと404になることがある）
+  sel.value = ms.length ? ms[ms.length-1] : '';
 
   setAgeColsVisible(true);
 
   async function render(){
     const month = sel.value;
-    const data = await loadJSON(`data/${month}.json`);
+    const data = await loadJSON(`../data/${month}.json`);
     document.getElementById('monthLabel').textContent = month;
 
     const totWait = (data.facilities||[]).reduce((s,f)=>s+Number(f.totals?.wait||0),0);
@@ -151,6 +171,7 @@ async function main(){
   });
   await render();
 }
+
 main().catch(err=>{
   alert(err.message);
   console.error(err);
