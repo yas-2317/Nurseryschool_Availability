@@ -83,7 +83,8 @@ def scrape_csv_urls() -> Dict[str, str]:
             best["wait"] = url
 
     # キーワード推定（保険）
-    if "accept" not in best:
-        for url in links:
-            if "受入" in url or "入
-
+   if "accept" not in best:
+    for url in links:
+        if ("受入" in url) or ("入所可能" in url):
+            best["accept"] = url
+            break
