@@ -66,13 +66,13 @@ function row(m,f){
 async function main(){
   const id = getParam('id');
   if(!id) throw new Error('idが指定されていません');
-  const months = await loadJSON('..data/months.json');
+  const months = await loadJSON('data/months.json');
   const ms = (months.months||[]).slice().sort().reverse(); // newest first
 
   const rows=[];
   let latest=null;
   for(const m of ms){
-    const d = await loadJSON(`..data/${m}.json`);
+    const d = await loadJSON(`data/${m}.json`);
     const f = (d.facilities||[]).find(x=>String(x.id)===String(id));
     if(f){
       latest = latest || f;
