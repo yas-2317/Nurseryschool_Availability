@@ -95,7 +95,7 @@ function getGroups(f){
   };
 }
 
-function rowHTML(f){
+function rowHTML(f, prevF){
   const addr = safeStr(f.address||'');
   const map = safeStr(f.map_url||'');
   const link = map ? `<a href="${map}" target="_blank" rel="noopener">Google Map</a>` : '';
@@ -106,17 +106,25 @@ function rowHTML(f){
   function acc(k){ return fmt(g?.[k]?.accept); }
   function wai(k){ return fmt(g?.[k]?.wait); }
 
+  // 前月比（施設単位）
+  const dWait = prevF ? (Number(f.totals?.wait||0) - Number(prevF.totals?.wait||0)) : null;
+  const dAcc  = prevF ? (Number(f.totals?.accept||0) - Number(prevF.totals?.accept||0)) : null;
+  const sign = (n)=> (n==null ? "—" : (n>0 ? `+${n}` : `${n}`));
+
   return `<tr>
     <td><a href="facility.html?id=${encodeURIComponent(f.id)}">${safeStr(f.name)}</a><div class="small">施設番号：${safeStr(f.id)}</div></td>
     <td>${addrBlock}</td>
     <td>${fmt(f.totals?.accept)}</td>
     <td>${fmt(f.totals?.wait)}</td>
+    <td>${sign(dWait)}</td>
+    <td>${sign(dAcc)}</td>
     <td class="agecol">${acc('0')}</td><td class="agecol">${wai('0')}</td>
     <td class="agecol">${acc('1')}</td><td class="agecol">${wai('1')}</td>
     <td class="agecol">${acc('2')}</td><td class="agecol">${wai('2')}</td>
     <td class="agecol">${acc('3-5')}</td><td class="agecol">${wai('3-5')}</td>
   </tr>`;
 }
+
 
 function sortFacilities(arr, mode){
   const a=[...arr];
@@ -160,17 +168,42 @@ async function main(){
 
   setAgeColsVisible(true);
 
-  async function render(){
+   async function render(){
     const month = sel.value;
+
+    // months.json の配列から「前月（最新のひとつ前）」を取る
+    const allMonths = ms; // main() で作ってる ms（昇順）
+    const idx = allMonths.indexOf(month);
+    const prevMonth = (idx > 0) ? allMonths[idx - 1] : null;
+
     const data = await loadJSON(`data/${month}.json`);
-    document.getElementById('monthLabel').textContent = month;
+    const prevData = prevMonth ? await loadJSON(`data/${prevMonth}.json`) : null;
+
+    document.getElementById('monthLabel').textContent = prevMonth ? `${month}（前月：${prevMonth}）` : month;
+
+    // 前月施設をIDで引けるように
+    const prevMap = new Map();
+    if(prevData && prevData.facilities){
+      for(const pf of prevData.facilities){
+        prevMap.set(String(pf.id), pf);
+      }
+    }
 
     const totWait = (data.facilities||[]).reduce((s,f)=>s+Number(f.totals?.wait||0),0);
     const totAcc  = (data.facilities||[]).reduce((s,f)=>s+Number(f.totals?.accept||0),0);
+
+    const prevTotWait = prevData ? (prevData.facilities||[]).reduce((s,f)=>s+Number(f.totals?.wait||0),0) : null;
+    const prevTotAcc  = prevData ? (prevData.facilities||[]).reduce((s,f)=>s+Number(f.totals?.accept||0),0) : null;
+
+    const dTotWait = (prevTotWait==null) ? null : (totWait - prevTotWait);
+    const dTotAcc  = (prevTotAcc==null) ? null : (totAcc - prevTotAcc);
+
+    const sign = (n)=> (n==null ? "—" : (n>0 ? `+${n}` : `${n}`));
+
     document.getElementById('countLabel').textContent = (data.facilities||[]).length.toLocaleString('ja-JP');
     document.getElementById('kpi').innerHTML = `
-      <div class="pill">合計 入所待ち：${fmt(totWait)}</div>
-      <div class="pill">合計 受入可能：${fmt(totAcc)}</div>
+      <div class="pill">合計 入所待ち：${fmt(totWait)}（前月比 ${sign(dTotWait)}）</div>
+      <div class="pill">合計 受入可能：${fmt(totAcc)}（前月比 ${sign(dTotAcc)}）</div>
       <div class="pill">データ区：港北区</div>
     `;
 
@@ -184,9 +217,10 @@ async function main(){
     arr = sortFacilities(arr, sort);
 
     const tbody = document.querySelector('#tbl tbody');
-    tbody.innerHTML = arr.map(rowHTML).join('');
+    tbody.innerHTML = arr.map(f => rowHTML(f, prevMap.get(String(f.id)))).join('');
     setAgeColsVisible(showAgeCols);
   }
+
 
   sel.addEventListener('change', render);
   document.getElementById('q').addEventListener('input', render);
