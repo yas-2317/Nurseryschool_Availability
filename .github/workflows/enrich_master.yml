@@ -1,9 +1,9 @@
-name: Enrich master facilities (address/station)
+name: Enrich master facilities (no API)
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 2 1 * *"  # 毎月1日 11:00 JST（UTC 02:00）
+    - cron: "0 3 1 * *"  # 毎月1日 12:00 JST（UTC 03:00）
 
 permissions:
   contents: write
@@ -26,8 +26,9 @@ jobs:
       - name: Enrich master_facilities.csv
         env:
           WARD_FILTER: 港北区
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           WALK_SPEED_M_PER_MIN: "80"
+          NOMINATIM_SLEEP_SEC: "1.1"
+          NOMINATIM_RETRY: "3"
         run: |
           python -u scripts/enrich_master_facilities.py
           ls -la data | sed -n '1,120p'
@@ -38,5 +39,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/master_facilities.csv data/geocode_cache.json || true
-          git commit -m "Enrich master facilities" || echo "No changes"
+          git commit -m "Enrich master facilities (no API)" || echo "No changes"
           git push
