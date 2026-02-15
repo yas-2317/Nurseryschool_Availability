@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>園の詳細</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<header>
+  <div class="container">
+    <h1 id="title">園の詳細</h1>
+    <div class="sub"><a href="index.html">← 一覧に戻る</a></div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="card" id="basic"></div>
+  <div class="card tablewrap">
+    <table id="hist">
+      <thead>
+        <tr>
+          <th>月</th>
+          <th>受入可能（合計）</th>
+          <th>入所待ち（合計）</th>
+          <th>定員相当（合計）</th>
+          <th>入所待ち/定員相当（合計）</th>
+          <th>0歳 受入</th><th>0歳 待ち</th><th>0歳 定員相当</th><th>0歳 待ち/定員相当</th>
+          <th>1歳 受入</th><th>1歳 待ち</th><th>1歳 定員相当</th><th>1歳 待ち/定員相当</th>
+          <th>2歳 受入</th><th>2歳 待ち</th><th>2歳 定員相当</th><th>2歳 待ち/定員相当</th>
+          <th>3歳 受入</th><th>3歳 待ち</th><th>3歳 定員相当</th><th>3歳 待ち/定員相当</th>
+          <th>4歳 受入</th><th>4歳 待ち</th><th>4歳 定員相当</th><th>4歳 待ち/定員相当</th>
+          <th>5歳 受入</th><th>5歳 待ち</th><th>5歳 定員相当</th><th>5歳 待ち/定員相当</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="footer small">※ 月次データが増えると、ここに履歴が溜まります。</div>
+</main>
+
+<script src="common.js"></script>
+<script>
+function getParam(name){
+  const u = new URL(location.href);
+  return u.searchParams.get(name);
+}
+function row(m,f){
+  const ages = f.ages||{};
+  function acc(i){ return fmt(ages[i]?.accept); }
+  function wai(i){ return fmt(ages[i]?.wait); }
+  return `<tr>
+    <td>${m}</td>
+    <td>${fmt(f.totals?.accept)}</td>
+    <td>${fmt(f.totals?.wait)}</td>
+    <td>${fmt(f.totals?.capacity)}</td>
+    <td>${fmtPct(f.totals?.wait_per_capacity)}</td>
+    <td>${acc('0')}</td><td>${wai('0')}</td><td>${fmt(ages['0']?.capacity)}</td><td>${fmtPct(ages['0']?.wait_per_capacity)}</td>
+    <td>${acc('1')}</td><td>${wai('1')}</td><td>${fmt(ages['1']?.capacity)}</td><td>${fmtPct(ages['1']?.wait_per_capacity)}</td>
+    <td>${acc('2')}</td><td>${wai('2')}</td><td>${fmt(ages['2']?.capacity)}</td><td>${fmtPct(ages['2']?.wait_per_capacity)}</td>
+    <td>${acc('3')}</td><td>${wai('3')}</td><td>${fmt(ages['3']?.capacity)}</td><td>${fmtPct(ages['3']?.wait_per_capacity)}</td>
+    <td>${acc('4')}</td><td>${wai('4')}</td><td>${fmt(ages['4']?.capacity)}</td><td>${fmtPct(ages['4']?.wait_per_capacity)}</td>
+    <td>${acc('5')}</td><td>${wai('5')}</td><td>${fmt(ages['5']?.capacity)}</td><td>${fmtPct(ages['5']?.wait_per_capacity)}</td>
+  </tr>`;
+}
+async function main(){
+  const id = getParam('id');
+  if(!id) throw new Error('idが指定されていません');
+  const months = await loadJSON('..data/months.json');
+  const ms = (months.months||[]).slice().sort().reverse(); // newest first
+
+  const rows=[];
+  let latest=null;
+  for(const m of ms){
+    const d = await loadJSON(`..data/${m}.json`);
+    const f = (d.facilities||[]).find(x=>String(x.id)===String(id));
+    if(f){
+      latest = latest || f;
+      rows.push(row(m,f));
+    }
+  }
+  if(!latest) throw new Error('対象施設が見つかりませんでした');
+
+  document.getElementById('title').textContent = latest.name;
+  document.title = latest.name + ' | 園の詳細';
+  const addr = safeStr(latest.address||'');
+  const map = safeStr(latest.map_url||'');
+  const link = map ? `<a href="${map}" target="_blank" rel="noopener">Google Map</a>` : '';
+  document.getElementById('basic').innerHTML = `
+    <div class="kpi">
+      <div class="pill">施設番号：${safeStr(latest.id)}</div>
+      <div class="pill">区：${safeStr(latest.ward)}</div>
+      <div class="pill">最新月：${safeStr(latest.updated)}</div>
+    </div>
+    <div style="margin-top:10px">
+      <div><b>住所</b>：${addr || '（未設定）'}</div>
+      <div><b>地図</b>：${link || '（未設定）'}</div>
+    </div>
+  `;
+  document.querySelector('#hist tbody').innerHTML = rows.join('');
+}
+main().catch(err=>{ alert(err.message); console.error(err);});
+</script>
+</body>
+</html>
