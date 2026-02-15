@@ -157,14 +157,11 @@ button:hover{ border-color: #cbd5e1 !important; }
 
 /* Make table area scroll so header can stick INSIDE it */
 .tablewrap{
-  overflow: auto;
+  overflow: auto;                 /* 横スクロール用 */
   -webkit-overflow-scrolling: touch;
   border-radius: 14px;
   border: 1px solid var(--border) !important;
   background: var(--surface) !important;
-
-  /* ここが大事：内部スクロールを発生させる */
-  max-height: 70vh;
 }
 
 table{
