@@ -1,30 +1,33 @@
 /* =========================================
-   Yokohama Nursery Availability - Light gray UI
-   Fixes:
-   - Page header is NOT sticky (table header is sticky)
-   - Text is black everywhere
-   - Links are navy
+   Yokohama Nursery Availability - Light gray UI (clean)
+   - Background: light gray
+   - Text: black
+   - Links: navy
    - Delta colors kept
-   - Table header sticky works inside scroll container
-   - Styles apply to BOTH #tbl (list) and #hist (facility)
+   - ONLY table header sticky (page header not sticky)
+   - Sticky header works on page scroll (no overflow-y container on desktop)
+   - Avoid overlay issues with z-index
+   - Applies to BOTH #tbl (list) and #hist (facility)
    ========================================= */
 
 * { box-sizing: border-box; }
 
 :root{
-  --bg: #f3f4f6;       /* page background: light gray */
-  --surface: #ffffff;  /* cards/tables */
-  --text: #111111;     /* base text: black */
+  --bg: #f3f4f6;        /* page bg */
+  --surface: #ffffff;   /* cards/tables */
+  --text: #111111;
   --muted: #555555;
   --border: #e5e7eb;
 
-  --thead-bg: #f8fafc;
   --row-alt: #fafafa;
 
-  --link: #0b2a6f;      /* navy */
+  --link: #0b2a6f;
   --link-hover: #061a43;
 
-  --delta-plus: #d11;   /* keep */
+  --thead-bg: #0b2a6f;  /* navy */
+  --thead-text: #ffffff;
+
+  --delta-plus: #d11;
   --delta-minus: #06c;
   --delta-zero: #555;
   --delta-none: #999;
@@ -33,10 +36,10 @@
   --pill-border: #dfe7ff;
 }
 
-/* Page base */
+/* Base */
 html, body{
-  background: var(--bg) !important;
-  color: var(--text) !important;
+  background: var(--bg);
+  color: var(--text);
 }
 
 body{
@@ -46,11 +49,11 @@ body{
 
 /* Links */
 a, a:visited{
-  color: var(--link) !important;
+  color: var(--link);
   text-decoration: underline;
 }
 a:hover, a:focus{
-  color: var(--link-hover) !important;
+  color: var(--link-hover);
 }
 
 /* Layout */
@@ -60,24 +63,22 @@ a:hover, a:focus{
   padding: 0 16px;
 }
 
-/* IMPORTANT: page header is NOT sticky */
+/* Page header: NOT sticky */
 header{
   padding: 20px 16px;
   border-bottom: 1px solid var(--border);
-  position: static !important;   /* ←ここが重要 */
-  top: auto !important;
+  position: static;
   background: transparent;
-  backdrop-filter: none;
 }
 
 h1{
   font-size: 20px;
   margin: 0 0 6px 0;
-  color: var(--text) !important;
+  color: var(--text);
 }
 
 .sub{
-  color: var(--muted) !important;
+  color: var(--muted);
   font-size: 13px;
 }
 
@@ -90,29 +91,29 @@ h1{
 
 /* Inputs */
 input, select, button{
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  color: var(--text) !important;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
   border-radius: 12px;
   padding: 10px 12px;
   font-size: 14px;
 }
 
 button{ cursor: pointer; }
-button:hover{ border-color: #cbd5e1 !important; }
+button:hover{ border-color: #cbd5e1; }
 
 /* Cards */
 .card{
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 18px;
   padding: 14px;
   margin: 14px 0;
   box-shadow: 0 1px 2px rgba(0,0,0,.04);
-  color: var(--text) !important;
+  color: var(--text);
 }
 
-/* KPI pills: force black text (delta keeps its own color) */
+/* KPI */
 .kpi{
   display: flex;
   gap: 10px;
@@ -120,56 +121,64 @@ button:hover{ border-color: #cbd5e1 !important; }
 }
 
 .kpi .pill{
-  background: var(--pill-bg) !important;
-  border: 1px solid var(--pill-border) !important;
-  color: var(--text) !important;     /* ←黒固定 */
+  background: var(--pill-bg);
+  border: 1px solid var(--pill-border);
+  color: var(--text);              /* force black */
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
 }
 .kpi .pill *:not(.delta){
-  color: var(--text) !important;     /* ←中の文字も黒固定 */
+  color: var(--text);              /* keep black even when nested */
 }
 
-/* Badge / small text */
+/* Badge / small */
 .badge{
   display: inline-block;
   padding: 2px 8px;
   border-radius: 999px;
-  border: 1px solid var(--border) !important;
+  border: 1px solid var(--border);
   font-size: 12px;
-  color: var(--muted) !important;
-  background: var(--surface) !important;
+  color: var(--muted);
+  background: var(--surface);
 }
 
 .small{
   font-size: 12px;
-  color: var(--muted) !important;
+  color: var(--muted);
 }
 
 .footer{
   padding: 24px 16px;
-  color: var(--muted) !important;
+  color: var(--muted);
   font-size: 12px;
 }
 
-/* ===== Tables: applies to both list and facility ===== */
+/* =========================
+   Tables (list + facility)
+   ========================= */
 
-/* Make table area scroll so header can stick INSIDE it */
+/* Key point:
+   - On desktop, allow page scroll to drive sticky header => NO overflow-y scroll container
+   - Keep horizontal scroll only
+*/
 .tablewrap{
-  overflow: auto;                 /* 横スクロール用 */
+  overflow-x: auto;                 /* horizontal scroll only */
+  overflow-y: visible;              /* IMPORTANT for sticky-on-page-scroll */
   -webkit-overflow-scrolling: touch;
   border-radius: 14px;
-  border: 1px solid var(--border) !important;
-  background: var(--surface) !important;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  position: relative;               /* stacking context for z-index */
+  z-index: 0;
 }
 
 table{
   width: 100%;
   border-collapse: collapse;
   min-width: 980px;
-  background: var(--surface) !important;
-  color: var(--text) !important;
+  background: var(--surface);
+  color: var(--text);
 }
 
 th, td{
@@ -178,27 +187,33 @@ th, td{
   vertical-align: top;
 }
 
-/* Sticky header row for BOTH tables */
+/* Sticky header for BOTH tables */
 #tbl thead th,
 #hist thead th{
   position: sticky;
   top: 0;
-  z-index: 3;
-  background: var(--thead-bg) !important;
-  color: var(--muted) !important;
+  z-index: 50;                      /* above cells */
+  background: var(--thead-bg);
+  color: var(--thead-text);
   text-align: left;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 12px;
+  border-bottom: 1px solid rgba(255,255,255,.20);
+  background-clip: padding-box;
+  box-shadow: 0 2px 0 rgba(0,0,0,.08);
 }
 
+/* Body cells always under header */
 #tbl td, #hist td{
   font-size: 13px;
-  color: var(--text) !important;
+  color: var(--text);
+  position: relative;
+  z-index: 1;
 }
 
 #tbl tbody tr:nth-child(even),
 #hist tbody tr:nth-child(even){
-  background: var(--row-alt) !important;
+  background: var(--row-alt);
 }
 
 /* Delta */
@@ -206,12 +221,14 @@ th, td{
   font-variant-numeric: tabular-nums;
   font-weight: 700;
 }
-.delta.plus  { color: var(--delta-plus) !important; }
-.delta.minus { color: var(--delta-minus) !important; }
-.delta.zero  { color: var(--delta-zero) !important; }
-.delta.none  { color: var(--delta-none) !important; }
+.delta.plus  { color: var(--delta-plus); }
+.delta.minus { color: var(--delta-minus); }
+.delta.zero  { color: var(--delta-zero); }
+.delta.none  { color: var(--delta-none); }
 
-/* ===== Mobile ===== */
+/* =========================
+   Mobile
+   ========================= */
 @media (max-width: 768px){
   h1{ font-size: 18px; }
 
@@ -223,39 +240,15 @@ th, td{
   .kpi{ gap: 8px; }
   .kpi .pill{ width: 100%; }
 
-  /* Table: still scrollable */
-  .tablewrap{ max-height: 65vh; }
+  /* still horizontal scroll */
   table{ min-width: 900px; }
-}
-#tbl thead th,
-#hist thead th{
-  background: #0b2a6f !important; /* 紺 */
-  color: #ffffff !important;      /* 白文字 */
-  border-bottom: 1px solid rgba(255,255,255,.20);
-}
-/* ===== Prevent content overlaying sticky header ===== */
-.tablewrap{
-  position: relative;   /* stacking context */
-  z-index: 0;
-}
 
-/* sticky header should be on top */
-#tbl thead th,
-#hist thead th{
-  position: sticky;
-  top: 0;
-  z-index: 50 !important;       /* 強めに */
-  background-clip: padding-box; /* 透け防止 */
-}
-
-/* 念のため：表本体はヘッダーより下 */
-#tbl td, #hist td{
-  position: relative;
-  z-index: 1;
-}
-
-/* 貼り付き感（境界）を出すと “上に来てる”感が消える */
-#tbl thead th,
-#hist thead th{
-  box-shadow: 0 2px 0 rgba(0,0,0,.08);
+  /* If you WANT vertical scroll inside table on mobile only, enable below:
+     (ヘッダー固定を "モバイルだけ確実に" したい場合)
+  */
+  /* .tablewrap{
+       max-height: 65vh;
+       overflow-y: auto;
+     }
+  */
 }
