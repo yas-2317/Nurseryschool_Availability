@@ -158,7 +158,23 @@ async function main(){
 }
 
 
-main().catch(err=>{ alert(err.message); console.error(err);});
+async function boot(){
+  try{
+    await main();
+  }catch(err){
+    alert(err.message);
+    console.error(err);
+  }
+}
+
+// 通常ロード
+document.addEventListener('DOMContentLoaded', boot);
+
+// iOSのbfcache復元（リンク遷移/戻る進むでJSが再実行されない対策）
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) boot();
+});
+
 </script>
 </body>
 </html>
