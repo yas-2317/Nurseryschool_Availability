@@ -19,17 +19,16 @@ DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 MASTER_CSV = DATA_DIR / "master_facilities.csv"
-OUT_CSV = DATA_DIR / "master_facilities.csv"  # 上書き
+OUT_CSV = DATA_DIR / "master_facilities.csv"          # 上書き
 CACHE_JSON = DATA_DIR / "geocode_cache.json"
+MISSES_CSV = DATA_DIR / "geocode_misses.csv"
 
 WARD_HINT = (os.getenv("WARD_FILTER", "港北区") or "").strip() or "港北区"
 
-# 徒歩分の換算（m/分）
 WALK_SPEED_M_PER_MIN = float(os.getenv("WALK_SPEED_M_PER_MIN", "80"))
-# Nominatim レート制限対策（秒）
 SLEEP_SEC = float(os.getenv("NOMINATIM_SLEEP_SEC", "1.1"))
-# 失敗を減らすための試行回数
-RETRY = int(os.getenv("NOMINATIM_RETRY", "3"))
+RETRY = int(os.getenv("NOMINATIM_RETRY", "4"))
+MAX_CANDIDATES = int(os.getenv("NOMINATIM_MAX_CANDIDATES", "5"))
 
 # ---- 港北区周辺 主要駅（必要なら追加） ----
 STATIONS: List[Dict[str, Any]] = [
@@ -58,6 +57,20 @@ def norm(s: Any) -> str:
 
 def is_blank(s: Any) -> bool:
     return norm(s) == ""
+
+def normalize_name(name: str) -> str:
+    """
+    ヒット率向上用の正規化：
+    - 全角スペース→半角
+    - 連続スペース削減
+    - カッコ内注記を除去（例：〇〇保育園（分園））
+    - 記号ゆれを軽減
+    """
+    x = norm(name)
+    x = re.sub(r"[（\(].*?[）\)]", "", x).strip()
+    x = x.replace("・", "").replace("　", " ")
+    x = re.sub(r"\s+", " ", x).strip()
+    return x
 
 def haversine_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     R = 6371000.0
@@ -93,93 +106,126 @@ def guess_nearest_station(lat: float, lng: float) -> Tuple[str, int]:
 def build_map_url(lat: float, lng: float) -> str:
     return f"https://www.google.com/maps/search/?api=1&query={lat},{lng}"
 
+def score_candidate(hit: Dict[str, Any], ward: str) -> int:
+    """
+    Nominatim候補を “横浜市 + 港北区” に寄せて選ぶスコア。
+    """
+    s = 0
+    disp = (hit.get("display_name") or "")
+    addr = (hit.get("address") or {})
+
+    if "横浜市" in disp:
+        s += 50
+    if ward and ward in disp:
+        s += 40
+
+    # addressdetails からも加点
+    city = str(addr.get("city") or addr.get("town") or addr.get("municipality") or "")
+    county = str(addr.get("county") or "")
+    suburb = str(addr.get("suburb") or addr.get("city_district") or "")
+
+    if "横浜" in city:
+        s += 30
+    if ward and (ward in county or ward in suburb):
+        s += 30
+
+    # 日本であること（country）
+    if str(addr.get("country") or "") in ("日本", "Japan"):
+        s += 10
+
+    return s
+
 # ---------------- nominatim ----------------
-def nominatim_search(q: str) -> Optional[Dict[str, Any]]:
+def nominatim_search(q: str) -> List[Dict[str, Any]]:
     url = "https://nominatim.openstreetmap.org/search"
     headers = {
-        # ここは必ず入れる（User-Agent必須）
         "User-Agent": "NurseryAvailabilityBot/1.0 (non-commercial; github actions)",
         "Accept-Language": "ja",
     }
     params = {
         "q": q,
         "format": "json",
-        "limit": 1,
+        "limit": MAX_CANDIDATES,
         "addressdetails": 1,
     }
 
-    last_err = None
     for t in range(RETRY):
         try:
             r = requests.get(url, params=params, headers=headers, timeout=40)
-            # Nominatimは429が出ることがあるので少し待ってリトライ
             if r.status_code == 429:
+                # レート制限：指数バックオフ
                 time.sleep(max(SLEEP_SEC, 2.0) * (t + 1))
                 continue
             r.raise_for_status()
             arr = r.json()
-            if not arr:
-                return None
-            return arr[0]
+            return arr if isinstance(arr, list) else []
         except Exception as e:
-            last_err = e
+            print("WARN nominatim error:", e)
             time.sleep(SLEEP_SEC * (t + 1))
-    if last_err:
-        print("WARN nominatim failed:", last_err)
-    return None
+    return []
 
-def lookup_nominatim(name: str, ward: str, address_hint: str, cache: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    # キャッシュキーは “ward::name”
-    key = f"{ward}::{name}"
+def lookup_nominatim(facility_id: str, name: str, ward: str, address_hint: str, cache: Dict[str, Any]) -> Tuple[Optional[Dict[str, Any]], str]:
+    """
+    戻り値: (out or None, used_query)
+    キャッシュキーは facility_id 優先（園名ゆれに強い）
+    """
+    fid = norm(facility_id)
+    key = f"fid::{fid}" if fid else f"{ward}::{name}"
     if key in cache:
-        return cache[key]
+        return cache[key], cache[key].get("q", "")
 
-    # クエリは段階的に試す（取りこぼしを減らす）
-    # 住所が空なら園名＋横浜市＋区、住所があるなら住所も足す
-    queries = []
+    nm = normalize_name(name)
+    queries: List[str] = []
+
+    # 住所ヒントがある場合は最優先
     if address_hint:
-        queries.append(f"{name} {address_hint} 横浜市{ward} 日本")
-    queries.append(f"{name} 横浜市{ward} 日本")
-    # “保育園” の別表記がある園もいるので保険
-    if "保育園" not in name:
-        queries.append(f"{name} 保育園 横浜市{ward} 日本")
+        queries.append(f"{nm} {address_hint} 横浜市{ward} 日本")
 
-    hit = None
+    # 基本クエリ（園名 + 区 + 横浜市）
+    queries.append(f"{nm} 横浜市{ward} 日本")
+
+    # “保育園/保育所/こども園” のゆれを保険で追加
+    if "保育" not in nm:
+        queries.append(f"{nm} 保育園 横浜市{ward} 日本")
+        queries.append(f"{nm} 保育所 横浜市{ward} 日本")
+    queries.append(f"{nm} 認定こども園 横浜市{ward} 日本")
+
     used_q = ""
     for q in queries:
         q = re.sub(r"\s+", " ", q).strip()
         used_q = q
-        hit = nominatim_search(q)
-        # 失敗してもレートのため少し待つ
+        hits = nominatim_search(q)
         time.sleep(SLEEP_SEC)
-        if hit:
-            break
 
-    if not hit:
-        return None
+        if not hits:
+            continue
 
-    lat = float(hit["lat"])
-    lng = float(hit["lon"])
-    disp = hit.get("display_name") or ""
+        # スコア最大の候補を選ぶ
+        best = max(hits, key=lambda h: score_candidate(h, ward))
 
-    out = {
-        "address": disp,  # 長い場合があるが、まずはそのまま。必要なら後で整形。
-        "lat": lat,
-        "lng": lng,
-        "map_url": build_map_url(lat, lng),
-        "q": used_q,
-    }
+        lat = float(best["lat"])
+        lng = float(best["lon"])
+        disp = best.get("display_name") or ""
 
-    cache[key] = out
-    save_cache(cache)
-    return out
+        out = {
+            "address": disp,
+            "lat": lat,
+            "lng": lng,
+            "map_url": build_map_url(lat, lng),
+            "q": used_q,
+        }
+        cache[key] = out
+        save_cache(cache)
+        return out, used_q
+
+    return None, used_q
 
 # ---------------- csv i/o ----------------
-def read_csv(path: Path) -> List[Dict[str, str]]:
+def read_csv_file(path: Path) -> List[Dict[str, str]]:
     with path.open("r", encoding="utf-8-sig", newline="") as f:
         return list(csv.DictReader(f))
 
-def write_csv(path: Path, rows: List[Dict[str, str]], fieldnames: List[str]) -> None:
+def write_csv_file(path: Path, rows: List[Dict[str, str]], fieldnames: List[str]) -> None:
     with path.open("w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames)
         w.writeheader()
@@ -197,20 +243,35 @@ def ensure_columns(fieldnames: List[str]) -> List[str]:
             fieldnames.append(k)
     return fieldnames
 
+def write_misses(misses: List[Dict[str, str]]) -> None:
+    if not misses:
+        # 以前のファイルが残ると紛らわしいので空でも書き換える
+        MISSES_CSV.write_text("facility_id,name,ward,query_tried\n", encoding="utf-8")
+        return
+    with MISSES_CSV.open("w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["facility_id","name","ward","query_tried"])
+        w.writeheader()
+        for r in misses:
+            w.writerow(r)
+
 def main() -> None:
     if not MASTER_CSV.exists():
         raise FileNotFoundError(f"not found: {MASTER_CSV}")
 
-    rows = read_csv(MASTER_CSV)
+    rows = read_csv_file(MASTER_CSV)
     if not rows:
         raise RuntimeError("master_facilities.csv is empty")
 
     fieldnames = ensure_columns(list(rows[0].keys()))
     cache = load_cache()
 
-    updated = 0
+    total = len(rows)
     geocoded = 0
+    updated_cells = 0
+    misses: List[Dict[str, str]] = []
+
     for i, r in enumerate(rows, 1):
+        fid = norm(r.get("facility_id"))
         name = norm(r.get("name"))
         if not name:
             continue
@@ -218,7 +279,6 @@ def main() -> None:
         ward = norm(r.get("ward")) or WARD_HINT
         address_hint = norm(r.get("address"))
 
-        # address/lat/lng/map_url のうち、どれか欠けてたらジオコード
         need_geo = (
             is_blank(r.get("address")) or
             is_blank(r.get("lat")) or is_blank(r.get("lng")) or
@@ -226,19 +286,19 @@ def main() -> None:
         )
 
         if need_geo:
-            out = lookup_nominatim(name, ward, address_hint, cache)
+            out, used_q = lookup_nominatim(fid, name, ward, address_hint, cache)
             if out:
                 if is_blank(r.get("address")) and out.get("address"):
-                    r["address"] = str(out["address"])
+                    r["address"] = str(out["address"]); updated_cells += 1
                 if (is_blank(r.get("lat")) or is_blank(r.get("lng"))) and out.get("lat") is not None and out.get("lng") is not None:
-                    r["lat"] = str(out["lat"])
-                    r["lng"] = str(out["lng"])
+                    r["lat"] = str(out["lat"]); r["lng"] = str(out["lng"]); updated_cells += 2
                 if is_blank(r.get("map_url")) and out.get("map_url"):
-                    r["map_url"] = str(out["map_url"])
+                    r["map_url"] = str(out["map_url"]); updated_cells += 1
                 geocoded += 1
-                updated += 1
+            else:
+                misses.append({"facility_id": fid, "name": name, "ward": ward, "query_tried": used_q})
 
-        # 最寄り駅・徒歩分（lat/lngが揃ったら推定）
+        # nearest station / walk minutes
         try:
             lat = float(r.get("lat") or 0)
             lng = float(r.get("lng") or 0)
@@ -246,21 +306,23 @@ def main() -> None:
                 if is_blank(r.get("nearest_station")) or is_blank(r.get("walk_minutes")):
                     st, wm = guess_nearest_station(lat, lng)
                     if is_blank(r.get("nearest_station")):
-                        r["nearest_station"] = st
-                        updated += 1
+                        r["nearest_station"] = st; updated_cells += 1
                     if is_blank(r.get("walk_minutes")):
-                        r["walk_minutes"] = str(wm)
-                        updated += 1
+                        r["walk_minutes"] = str(wm); updated_cells += 1
         except Exception:
             pass
 
         if i % 50 == 0:
-            print(f"processed {i}/{len(rows)} ... geocoded={geocoded} updated={updated}")
+            print(f"processed {i}/{total} ... geocoded={geocoded} misses={len(misses)} updated_cells={updated_cells}")
 
-    write_csv(OUT_CSV, rows, fieldnames)
+    write_csv_file(OUT_CSV, rows, fieldnames)
+    write_misses(misses)
+
     print("DONE. wrote:", OUT_CSV)
+    print("total rows:", total)
     print("geocoded rows:", geocoded)
-    print("updated cells:", updated)
+    print("misses:", len(misses), f"(see {MISSES_CSV.name})")
+    print("updated cells:", updated_cells)
 
 if __name__ == "__main__":
     main()
