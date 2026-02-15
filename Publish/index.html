@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>横浜市港北区 保育園 受入可能数・入所待ち人数（年齢別）</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<header>
+  <div class="container">
+    <h1>横浜市港北区：保育園ごとの「受入可能数」「入所待ち人数」（年齢別）</h1>
+    <div class="sub">データ時点：<span id="monthLabel">-</span> / 施設数：<span id="countLabel">-</span></div>
+    <div class="controls">
+      <select id="monthSelect"></select>
+      <input id="q" placeholder="園名で検索（例：日吉）" />
+      <select id="sort">
+        <option value="wait_desc">合計入所待ち 多い順</option>
+        <option value="accept_desc">合計受入可能 多い順</option>
+        <option value="name_asc">園名（あいうえお）</option>
+      </select>
+      <button id="toggleCols">年齢別列：非表示</button>
+      <span class="badge">※「入所待ち人数」は園ごとの申込件数（重複計上あり）</span>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="card">
+    <div class="kpi" id="kpi"></div>
+    <div class="small">住所・公式定員などは <code>data/master_facilities.csv</code> を埋めると表示できます。現状は住所空欄、地図は園名検索リンクです。</div>
+  </div>
+
+  <div class="card tablewrap">
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th style="min-width:240px;">園名</th>
+          <th style="min-width:220px;">住所 / 地図</th>
+          <th>受入可能（合計）</th>
+          <th>入所待ち（合計）</th>
+          <th>定員相当（合計）</th>
+          <th>入所待ち/定員相当（合計）</th>
+          <th class="agecol">0歳 受入</th><th class="agecol">0歳 待ち</th>
+          <th class="agecol">1歳 受入</th><th class="agecol">1歳 待ち</th>
+          <th class="agecol">2歳 受入</th><th class="agecol">2歳 待ち</th>
+          <th class="agecol">3歳 受入</th><th class="agecol">3歳 待ち</th>
+          <th class="agecol">4歳 受入</th><th class="agecol">4歳 待ち</th>
+          <th class="agecol">5歳 受入</th><th class="agecol">5歳 待ち</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    出典：横浜市「保育所等の入所状況（毎月1日時点）」の公開データを加工（本サイトは非公式）。更新自動化は README の手順を参照。
+  </div>
+</main>
+
+<script src="common.js"></script>
+<script>
+let showAgeCols = true;
+
+function setAgeColsVisible(v){
+  showAgeCols = v;
+  document.querySelectorAll('.agecol').forEach(el=>{
+    el.style.display = v ? '' : 'none';
+  });
+  document.getElementById('toggleCols').textContent = v ? '年齢別列：非表示' : '年齢別列：表示';
+}
+
+function rowHTML(f){
+  const addr = safeStr(f.address||'');
+  const map = safeStr(f.map_url||'');
+  const link = map ? `<a href="${map}" target="_blank" rel="noopener">Google Map</a>` : '';
+  const addrBlock = addr ? `${addr}<br>${link}` : `${link}`;
+  const ages = f.ages||{};
+  function acc(i){ return fmt(ages[i]?.accept); }
+  function wai(i){ return fmt(ages[i]?.wait); }
+  return `<tr>
+    <td><a href="facility.html?id=${encodeURIComponent(f.id)}">${safeStr(f.name)}</a><div class="small">施設番号：${safeStr(f.id)}</div></td>
+    <td>${addrBlock}</td>
+    <td>${fmt(f.totals?.accept)}</td>
+    <td>${fmt(f.totals?.wait)}</td>
+    <td>${fmt(f.totals?.capacity)}</td>
+    <td>${fmtPct(f.totals?.wait_per_capacity)}</td>
+    <td class="agecol">${acc('0')}</td><td class="agecol">${wai('0')}</td>
+    <td class="agecol">${acc('1')}</td><td class="agecol">${wai('1')}</td>
+    <td class="agecol">${acc('2')}</td><td class="agecol">${wai('2')}</td>
+    <td class="agecol">${acc('3')}</td><td class="agecol">${wai('3')}</td>
+    <td class="agecol">${acc('4')}</td><td class="agecol">${wai('4')}</td>
+    <td class="agecol">${acc('5')}</td><td class="agecol">${wai('5')}</td>
+  </tr>`;
+}
+
+function sortFacilities(arr, mode){
+  const a=[...arr];
+  if(mode==='wait_desc'){
+    a.sort((x,y)=>(Number(y.totals?.wait||0)-Number(x.totals?.wait||0)));
+  } else if(mode==='accept_desc'){
+    a.sort((x,y)=>(Number(y.totals?.accept||0)-Number(x.totals?.accept||0)));
+  } else if(mode==='name_asc'){
+    a.sort((x,y)=>safeStr(x.name).localeCompare(safeStr(y.name),'ja'));
+  }
+  return a;
+}
+
+async function main(){
+  const months = await loadJSON('..data/months.json');
+  const ms = months.months||[];
+  const sel = document.getElementById('monthSelect');
+  sel.innerHTML = ms.map(m=>`<option value="${m}">${m}</option>`).join('');
+  sel.value = ms[0];
+
+  setAgeColsVisible(true);
+
+  async function render(){
+    const month = sel.value;
+    const data = await loadJSON(`..data/${month}.json`);
+    document.getElementById('monthLabel').textContent = month;
+
+    const totWait = (data.facilities||[]).reduce((s,f)=>s+Number(f.totals?.wait||0),0);
+    const totAcc  = (data.facilities||[]).reduce((s,f)=>s+Number(f.totals?.accept||0),0);
+    document.getElementById('countLabel').textContent = (data.facilities||[]).length.toLocaleString('ja-JP');
+    document.getElementById('kpi').innerHTML = `
+      <div class="pill">合計 入所待ち：${fmt(totWait)}</div>
+      <div class="pill">合計 受入可能：${fmt(totAcc)}</div>
+      <div class="pill">データ区：港北区</div>
+    `;
+
+    const q = document.getElementById('q').value.trim();
+    const sort = document.getElementById('sort').value;
+
+    let arr = data.facilities||[];
+    if(q){
+      arr = arr.filter(f=> safeStr(f.name).includes(q));
+    }
+    arr = sortFacilities(arr, sort);
+
+    const tbody = document.querySelector('#tbl tbody');
+    tbody.innerHTML = arr.map(rowHTML).join('');
+    setAgeColsVisible(showAgeCols);
+  }
+
+  sel.addEventListener('change', render);
+  document.getElementById('q').addEventListener('input', render);
+  document.getElementById('sort').addEventListener('change', render);
+  document.getElementById('toggleCols').addEventListener('click', ()=>{
+    setAgeColsVisible(!showAgeCols);
+  });
+  await render();
+}
+main().catch(err=>{
+  alert(err.message);
+  console.error(err);
+});
+</script>
+</body>
+</html>
