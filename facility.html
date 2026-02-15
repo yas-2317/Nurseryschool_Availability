@@ -41,6 +41,23 @@
 
 <script src="common.js"></script>
 <script>
+function getParam(key){
+  const u = new URL(location.href);
+  return u.searchParams.get(key);
+}
+function safeStr(x){ return (x==null) ? '' : String(x); }
+function fmt(x){
+  if(x==null || x==='' ) return '—';
+  const n = Number(x);
+  return Number.isFinite(n) ? n.toLocaleString('ja-JP') : String(x);
+}
+async function loadJSON(url){
+  const bust = (url.includes('?') ? '&' : '?') + 'v=' + Date.now();
+  const r = await fetch(url + bust, { cache: 'no-store' });
+  if(!r.ok) throw new Error(`Failed to load ${url}`);
+  return await r.json();
+}
+
 function getGroups(f){
   if(f.age_groups) return f.age_groups;
   const ages = f.ages || f.ages_0_5 || {};
