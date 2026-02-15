@@ -227,3 +227,35 @@ th, td{
   .tablewrap{ max-height: 65vh; }
   table{ min-width: 900px; }
 }
+#tbl thead th,
+#hist thead th{
+  background: #0b2a6f !important; /* 紺 */
+  color: #ffffff !important;      /* 白文字 */
+  border-bottom: 1px solid rgba(255,255,255,.20);
+}
+/* ===== Prevent content overlaying sticky header ===== */
+.tablewrap{
+  position: relative;   /* stacking context */
+  z-index: 0;
+}
+
+/* sticky header should be on top */
+#tbl thead th,
+#hist thead th{
+  position: sticky;
+  top: 0;
+  z-index: 50 !important;       /* 強めに */
+  background-clip: padding-box; /* 透け防止 */
+}
+
+/* 念のため：表本体はヘッダーより下 */
+#tbl td, #hist td{
+  position: relative;
+  z-index: 1;
+}
+
+/* 貼り付き感（境界）を出すと “上に来てる”感が消える */
+#tbl thead th,
+#hist thead th{
+  box-shadow: 0 2px 0 rgba(0,0,0,.08);
+}
