@@ -26,8 +26,9 @@ jobs:
       - name: Enrich master_facilities.csv
         env:
           WARD_FILTER: 港北区
-          WALK_SPEED_M_PER_MIN: "80"
+          NOMINATIM_EMAIL: ${{ secrets.NOMINATIM_EMAIL }}
           NOMINATIM_SLEEP_SEC: "1.1"
+          WALK_SPEED_M_PER_MIN: "80"
           NOMINATIM_RETRY: "3"
         run: |
           python -u scripts/enrich_master_facilities.py
