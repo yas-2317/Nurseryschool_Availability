@@ -1,4 +1,4 @@
-name: Fix master (all months)
+name: Fix master
 
 on:
   workflow_dispatch:
