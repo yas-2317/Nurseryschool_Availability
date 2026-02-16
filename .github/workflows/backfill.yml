@@ -1,51 +1,90 @@
-name: Backfill
+name: Backfill nursery data (months) + apply master to all months
 
 on:
   workflow_dispatch:
     inputs:
+      ward_filter:
+        description: "対象区（例：港北区）。空欄なら全件"
+        required: false
+        default: "港北区"
       months_back:
-        description: "How many months back to generate (e.g. 24)"
+        description: "何か月分さかのぼるか（例：24）"
         required: true
         default: "24"
-      force:
-        description: "Force overwrite existing month json (1=yes,0=no)"
+      force_backfill:
+        description: "既存JSONがあっても上書きする（1:する / 0:しない）"
         required: true
         default: "1"
 
 permissions:
   contents: write
 
+concurrency:
+  group: backfill
+  cancel-in-progress: false
+
 jobs:
   backfill:
     runs-on: ubuntu-latest
-    env:
-      WARD_FILTER: 港北区
-      MONTHS_BACK: ${{ inputs.months_back }}
-      FORCE_BACKFILL: ${{ inputs.force }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout (full)
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - run: |
-          python -m pip install --upgrade pip
-          pip install requests beautifulsoup4 openpyxl
-
-      - run: |
-          python -u scripts/backfill_last_year.py
-          ls -la data | head -n 50
-
-      - run: |
+      - name: Sync with remote (rebase)
+        run: |
           set -euxo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git rebase origin/main
 
-          git add data/*.json data/months.json || true
-          git commit -m "Backfill nursery data" || echo "No changes"
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-          git pull --rebase origin main
-          git push
+      - name: Install deps
+        run: |
+          set -euxo pipefail
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 openpyxl pykakasi
+
+      - name: Ensure scripts exist
+        run: |
+          set -euxo pipefail
+          test -f scripts/backfill_last_year.py
+          test -f scripts/apply_master_to_all_months.py
+          ls -la scripts
+
+      - name: Backfill months
+        env:
+          WARD_FILTER: ${{ inputs.ward_filter }}
+          MONTHS_BACK: ${{ inputs.months_back }}
+          FORCE_BACKFILL: ${{ inputs.force_backfill }}
+        run: |
+          set -euxo pipefail
+          python -u scripts/backfill_last_year.py
+          ls -la data || true
+
+      - name: Apply master (incl kana) to ALL month JSON
+        run: |
+          set -euxo pipefail
+          python -u scripts/apply_master_to_all_months.py
+
+      - name: Commit & push
+        run: |
+          set -euxo pipefail
+
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No changes."
+            exit 0
+          fi
+
+          git add data/*.json data/months.json data/master_facilities.csv || true
+          git commit -m "Backfill months + apply master to all months" || true
+
+          git fetch origin main
+          git rebase origin/main
+          git push origin main
