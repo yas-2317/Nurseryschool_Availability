@@ -57,6 +57,13 @@ BAD_STATION_WORDS = [
     "消防", "警察", "区役所", "市役所", "郵便局", "図書館", "体育館", "保育園", "幼稚園",
     "こども園", "店", "スーパー", "コンビニ", "薬局", "営業所", "本社", "支店", "工場",
 ]
+BAD_STATION_WORDS += [
+    "交番", "入口", "寺", "神社", "橋", "踏切",
+    "二丁目", "三丁目", "四丁目", "五丁目", "丁目",
+    "番地", "番", "号",
+    "プラウド", "シティ", "レジデンス", "マンション", "団地", "ハイツ", "コーポ",
+]
+
 
 # ---------------- small utils ----------------
 def safe(x: Any) -> str:
@@ -100,18 +107,33 @@ def looks_like_station_name(name: str) -> bool:
     n = safe(name).strip()
     if not n:
         return False
+
+    # 住所っぽい（〜丁目/〜番/〜号）は駅ではない
+    if re.search(r"\d+丁目", n) or re.search(r"\d+番", n) or re.search(r"\d+号", n):
+        return False
+    if "丁目" in n or "番地" in n:
+        return False
+
+    # 「〜前」「〜入口」「〜交番入口」などは駅ではない（※駅名に「前」は通常付かない）
+    if (n.endswith("前") or n.endswith("入口")) and ("駅" not in n):
+        return False
+
     # 明確に駅でない語を含む
     for w in BAD_STATION_WORDS:
         if w in n:
             return False
-    # 「駅」を含む or 末尾「…駅」
+
+    # “〇〇駅” はOK
     if n.endswith("駅") or ("駅" in n):
         return True
-    # 例外：地名だけ返ることがあるので「新横浜」「日吉」等は許容し、後で「駅」付ける
-    # ただし漢字2〜6文字程度の短い地名っぽいものだけ
+
+    # 駅タイプが付いていて「駅」が省略されるケース（例：新横浜 / 日吉 など）だけ許容
+    # → ここでは “地名だけ” の短い文字列だけ通す（後段で types 必須）
     if re.fullmatch(r"[一-龥ぁ-んァ-ヶー]{2,8}", n):
         return True
+
     return False
+
 
 def normalize_station_name(name: str) -> str:
     n = safe(name).strip()
@@ -130,13 +152,17 @@ def normalize_station_name(name: str) -> str:
 def is_station_candidate(place: Dict[str, Any]) -> bool:
     name = safe(place.get("name")).strip()
     types = set(place.get("types") or [])
-    # types が駅系を含むこと（最重要）
+
+    # ★駅タイプ必須（これが無い候補は絶対採用しない）
     if not (types & ALLOWED_STATION_TYPES):
         return False
-    # 名前が駅っぽいこと
+
+    # ★名前の形としても駅らしいものだけ
     if not looks_like_station_name(name):
         return False
+
     return True
+
 
 # ---------------- Google APIs ----------------
 def g_get(url: str, params: Dict[str, Any]) -> Dict[str, Any]:
