@@ -95,17 +95,22 @@ jobs:
           python -V
           ls -la data || true
 
+      # ★ if: を使わずに bash 内で条件分岐（YAMLパース事故を避ける）
       - name: Optional: wipe station cache
-        if: ${{ inputs.force_rebuild_stations == '1' }}
+        env:
+          FORCE_REBUILD_STATIONS: ${{ inputs.force_rebuild_stations }}
         run: |
           set -euxo pipefail
-          rm -f data/stations_cache_yokohama.json
-          rm -f data/station_misses.csv
+          if [ "${FORCE_REBUILD_STATIONS}" = "1" ]; then
+            rm -f data/stations_cache_yokohama.json
+            rm -f data/station_misses.csv
+          fi
           ls -la data || true
 
       - name: Fix master_facilities.csv (Google)
         env:
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+
           CITY_FILTER: ${{ inputs.city_filter }}
           WARD_FILTER: ${{ inputs.ward_filter }}
 
@@ -130,7 +135,11 @@ jobs:
           echo "---- data dir ----"
           ls -la data || true
           echo "---- station_misses (head) ----"
-          (test -f data/station_misses.csv && head -n 80 data/station_misses.csv) || true
+          if [ -f data/station_misses.csv ]; then
+            head -n 80 data/station_misses.csv
+          else
+            echo "no station_misses.csv"
+          fi
 
       - name: Rebuild latest month JSON (apply master to site data)
         env:
@@ -143,6 +152,7 @@ jobs:
       - name: Commit & push changes
         run: |
           set -euxo pipefail
+
           if [ -z "$(git status --porcelain)" ]; then
             echo "No changes."
             exit 0
