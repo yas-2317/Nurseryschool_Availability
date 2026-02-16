@@ -353,11 +353,20 @@ def main() -> None:
 
         name = str(ar.get(name_key, "")).strip() if name_key else ""
 
-        m = master.get(fid, {})
+       m = master.get(fid, {})
         address = (m.get("address") or "").strip()
         lat = (m.get("lat") or "").strip()
         lng = (m.get("lng") or "").strip()
         map_url = (m.get("map_url") or "").strip() or build_map_url(name, ward, address, lat, lng)
+
+        # ★追加：かな（検索用）
+        name_kana = (m.get("name_kana") or "").strip()
+        station_kana = (m.get("station_kana") or "").strip()
+
+        # ★追加：最寄り駅/徒歩（すでにCSVにある想定）
+        nearest_station = (m.get("nearest_station") or "").strip()
+        walk_minutes = to_int(m.get("walk_minutes"))
+
 
         nearest_station = (m.get("nearest_station") or "").strip()
         walk_minutes = parse_walk_minutes(m.get("walk_minutes"))
