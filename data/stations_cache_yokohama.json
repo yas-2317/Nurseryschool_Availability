@@ -1,40 +1,16 @@
 {
   "stations": [
     {
-      "place_id": "ChIJlbf1tuleGGARBcTzriQ_1RI",
-      "name": "菊名駅",
-      "lat": 35.5099195,
-      "lng": 139.6313685,
+      "place_id": "ChIJgRICuYRaGGARxF5HSl_u-jg",
+      "name": "戸塚駅",
+      "lat": 35.40061310000001,
+      "lng": 139.5342406,
       "types": [
-        "establishment",
-        "point_of_interest",
-        "train_station",
-        "transit_station"
-      ]
-    },
-    {
-      "place_id": "ChIJGd-3wUNfGGARdEwjDVpKVz4",
-      "name": "綱島駅",
-      "lat": 35.5366941,
-      "lng": 139.6346323,
-      "types": [
-        "establishment",
-        "point_of_interest",
-        "train_station",
-        "transit_station"
-      ]
-    },
-    {
-      "place_id": "ChIJTZ2M4XZfGGARsPw1fbj0psQ",
-      "name": "日吉駅",
-      "lat": 35.5532868,
-      "lng": 139.6468632,
-      "types": [
-        "establishment",
-        "point_of_interest",
+        "transit_station",
         "subway_station",
         "train_station",
-        "transit_station"
+        "point_of_interest",
+        "establishment"
       ]
     }
   ]
