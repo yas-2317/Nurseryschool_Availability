@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>横浜市港北区 保育園 受入可能数・入所待ち人数（年齢別）</title>
   <link rel="stylesheet" href="styles.css"/>
+  <style>
+    /* テーブルの幅が「微妙に足りない」対策：カードのpaddingを消して横幅を確保 */
+    .tablecard{ padding:0 !important; }
+    .tablecard .tablewrap{
+      border:0 !important;
+      border-radius:18px !important;
+    }
+    /* stickyヘッダーが他要素に負けないように（CSS側でやってるなら重複でもOK） */
+    #tbl thead th{ z-index: 50; }
+  </style>
 </head>
 <body>
 <header>
@@ -34,33 +44,36 @@
   <div class="card">
     <div class="kpi" id="kpi"></div>
     <div class="small">
-      住所・駅・徒歩は <code>data/master_facilities.csv</code> を参照（name_kana / station_kana を持たせると「ひよし→日吉」検索が可能）。
+      住所・駅・徒歩は <code>data/master_facilities.csv</code> を参照（<code>name_kana</code> / <code>station_kana</code> があると「ひよし→日吉」検索が可能）。
     </div>
   </div>
 
-  <div class="card tablewrap">
-    <table id="tbl">
-      <thead>
-        <tr>
-          <th style="min-width:240px;">園名</th>
-          <th style="min-width:220px;">住所</th>
-          <th style="min-width:120px;">地図</th>
-          <th style="min-width:150px;">最寄り駅</th>
-          <th style="min-width:90px;">徒歩</th>
+  <!-- ★カードのpaddingを消して幅を稼ぐ -->
+  <div class="card tablecard">
+    <div class="tablewrap">
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th style="min-width:240px;">園名</th>
+            <th style="min-width:260px;">住所</th>
+            <th style="min-width:120px;">地図</th>
+            <th style="min-width:170px;">最寄り駅</th>
+            <th style="min-width:90px;">徒歩</th>
 
-          <th style="min-width:110px;">受入可能（合計）</th>
-          <th style="min-width:110px;">入所待ち（合計）</th>
-          <th style="min-width:120px;">前月比 入所待ち</th>
-          <th style="min-width:120px;">前月比 受入可能</th>
+            <th style="min-width:120px;">受入可能（合計）</th>
+            <th style="min-width:120px;">入所待ち（合計）</th>
+            <th style="min-width:120px;">前月比 入所待ち</th>
+            <th style="min-width:120px;">前月比 受入可能</th>
 
-          <th class="agecol" style="min-width:90px;">0歳 受入</th><th class="agecol" style="min-width:90px;">0歳 待ち</th>
-          <th class="agecol" style="min-width:90px;">1歳 受入</th><th class="agecol" style="min-width:90px;">1歳 待ち</th>
-          <th class="agecol" style="min-width:90px;">2歳 受入</th><th class="agecol" style="min-width:90px;">2歳 待ち</th>
-          <th class="agecol" style="min-width:110px;">3〜5歳 受入</th><th class="agecol" style="min-width:110px;">3〜5歳 待ち</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+            <th class="agecol" style="min-width:90px;">0歳 受入</th><th class="agecol" style="min-width:90px;">0歳 待ち</th>
+            <th class="agecol" style="min-width:90px;">1歳 受入</th><th class="agecol" style="min-width:90px;">1歳 待ち</th>
+            <th class="agecol" style="min-width:90px;">2歳 受入</th><th class="agecol" style="min-width:90px;">2歳 待ち</th>
+            <th class="agecol" style="min-width:110px;">3〜5歳 受入</th><th class="agecol" style="min-width:110px;">3〜5歳 待ち</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
   <div class="footer">
@@ -79,17 +92,27 @@ function setAgeColsVisible(v){
   });
   document.getElementById('toggleCols').textContent = v ? '年齢別列：非表示' : '年齢別列：表示';
 }
+
+/* ひら/カタ変換（検索用） */
 function toHira(s){
-  // カタカナ→ひらがな
   return (s||"").replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
 }
 function toKata(s){
-  // ひらがな→カタカナ
   return (s||"").replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
 }
 function normSearch(s){
   return safeStr(s).trim().toLowerCase();
 }
+
+/* 駅名のソートキー（station_kana優先。無ければnearest_station） */
+function pickStationKey(f){
+  const sk = safeStr(f.station_kana || "");
+  const st = safeStr(f.nearest_station || "");
+  // kanaが無い場合でも、駅名をひらがな寄せにしておくと比較が安定しやすい
+  const base = sk || st;
+  return toHira(base).trim();
+}
+
 function getGroups(f){
   if(f.age_groups) return f.age_groups;
 
@@ -123,7 +146,7 @@ function rowHTML(f, prevF){
   const mapLink = map ? `<a href="${map}" target="_blank" rel="noopener">Google Map</a>` : '—';
 
   const station = safeStr(f.nearest_station||'');
-  const walk = (f.walk_minutes==null ? '—' : `${Number(f.walk_minutes)}分`);
+  const walk = (f.walk_minutes==null || f.walk_minutes==="" ? '—' : `${Number(f.walk_minutes)}分`);
 
   const g = getGroups(f);
   function acc(k){ return fmt(g?.[k]?.accept); }
@@ -180,9 +203,16 @@ function sortFacilities(arr, mode){
     a.sort((x,y)=>{
       const sx = pickStationKey(x);
       const sy = pickStationKey(y);
+
+      // 駅名が空のものは最後へ
+      const xEmpty = (sx === "");
+      const yEmpty = (sy === "");
+      if(xEmpty !== yEmpty) return xEmpty ? 1 : -1;
+
+      // 駅名 → 徒歩 → 園名 の順でソート
       if(sx !== sy) return sx.localeCompare(sy, 'ja');
-      const wx = (x.walk_minutes==null ? 9999 : Number(x.walk_minutes));
-      const wy = (y.walk_minutes==null ? 9999 : Number(y.walk_minutes));
+      const wx = (x.walk_minutes==null || x.walk_minutes==="" ? 9999 : Number(x.walk_minutes));
+      const wy = (y.walk_minutes==null || y.walk_minutes==="" ? 9999 : Number(y.walk_minutes));
       if(wx !== wy) return wx - wy;
       return safeStr(x.name).localeCompare(safeStr(y.name),'ja');
     });
@@ -192,15 +222,29 @@ function sortFacilities(arr, mode){
   return a;
 }
 
-function buildHaystack(f){
-  // 漢字/かな両対応：name + name_kana + station + station_kana
-  const s = [
-    safeStr(f.name),
-    safeStr(f.name_kana),
-    safeStr(f.nearest_station),
-    safeStr(f.station_kana),
-  ].join(" ");
-  return normalizeForSearch(s);
+/* ★検索：漢字/かな両取り
+   - 入力(q)をそのまま/ひらがな/カタカナにして
+   - name / nearest_station はそのまま比較
+   - name_kana / station_kana は ひら/カタどちらでも当たるように比較
+*/
+function matchesQuery(f, q){
+  const q0 = normSearch(q);
+  const qH = normSearch(toHira(q0));
+  const qK = normSearch(toKata(q0));
+
+  const name = normSearch(f.name);
+  const st   = normSearch(f.nearest_station);
+
+  // kana列は「ひらがなに寄せて」保持している想定（そうでなくても両方当てる）
+  const nk   = normSearch(f.name_kana);
+  const sk   = normSearch(f.station_kana);
+
+  return (
+    (name && name.includes(q0)) ||
+    (st && st.includes(q0)) ||
+    (nk && (nk.includes(qH) || nk.includes(qK) || toHira(nk).includes(qH) || toKata(nk).includes(qK))) ||
+    (sk && (sk.includes(qH) || sk.includes(qK) || toHira(sk).includes(qH) || toKata(sk).includes(qK)))
+  );
 }
 
 async function main(){
@@ -249,27 +293,10 @@ async function main(){
     const sort = document.getElementById('sort').value;
 
     let arr = data.facilities || [];
+
     if(q){
-      const q0 = normSearch(q);
-      const qH = normSearch(toHira(q0));
-      const qK = normSearch(toKata(q0));
-    
-      arr = arr.filter(f => {
-        const name = normSearch(f.name);
-        const nk   = normSearch(f.name_kana);
-        const st   = normSearch(f.nearest_station);
-        const sk   = normSearch(f.station_kana);
-    
-        // ひらがな入力でも、kana側（ひら/カタどっちでも）に当たる
-        return (
-          name.includes(q0) ||
-          nk.includes(qH) || nk.includes(qK) ||
-          st.includes(q0) ||
-          sk.includes(qH) || sk.includes(qK)
-        );
-      });
+      arr = arr.filter(f => matchesQuery(f, q));
     }
-    
 
     arr = sortFacilities(arr, sort);
 
