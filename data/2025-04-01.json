@@ -11,7 +11,7 @@
       "map_url": "https://maps.google.com/?cid=6402447506601554406",
       "nearest_station": "日吉本町駅",
       "station_kana": "ひよしほんちょう えき",
-      "walk_minutes": "12",
+      "walk_minutes": 12,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -109,7 +109,7 @@
       "map_url": "https://maps.google.com/?cid=8985316276667287350",
       "nearest_station": "日吉本町駅",
       "station_kana": "ひよしほんちょう えき",
-      "walk_minutes": "13",
+      "walk_minutes": 13,
       "updated": "2025-04-01",
       "totals": {
         "accept": 2,
@@ -207,7 +207,7 @@
       "map_url": "https://maps.google.com/?cid=13385297955881866588",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "7",
+      "walk_minutes": 7,
       "updated": "2025-04-01",
       "totals": {
         "accept": 5,
@@ -305,7 +305,7 @@
       "map_url": "https://maps.google.com/?cid=16615028082481106953",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -403,7 +403,7 @@
       "map_url": "https://maps.google.com/?cid=17989800127432245015",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "4",
+      "walk_minutes": 4,
       "updated": "2025-04-01",
       "totals": {
         "accept": 2,
@@ -501,7 +501,7 @@
       "map_url": "https://maps.google.com/?cid=16522461060142079424",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "4",
+      "walk_minutes": 4,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -599,7 +599,7 @@
       "map_url": "https://maps.google.com/?cid=3348325136545956794",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -697,7 +697,7 @@
       "map_url": "https://maps.google.com/?cid=10716041277156353854",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "12",
+      "walk_minutes": 12,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -795,7 +795,7 @@
       "map_url": "https://maps.google.com/?cid=16971089843171387925",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "10",
+      "walk_minutes": 10,
       "updated": "2025-04-01",
       "totals": {
         "accept": 8,
@@ -893,7 +893,7 @@
       "map_url": "https://maps.google.com/?cid=11298168629927634541",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "14",
+      "walk_minutes": 14,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -991,7 +991,7 @@
       "map_url": "https://maps.google.com/?cid=11464359558335328423",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "11",
+      "walk_minutes": 11,
       "updated": "2025-04-01",
       "totals": {
         "accept": 3,
@@ -1089,7 +1089,7 @@
       "map_url": "https://maps.google.com/?cid=12616409125295739202",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "12",
+      "walk_minutes": 12,
       "updated": "2025-04-01",
       "totals": {
         "accept": 4,
@@ -1187,7 +1187,7 @@
       "map_url": "https://maps.google.com/?cid=14563247226545749157",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "14",
+      "walk_minutes": 14,
       "updated": "2025-04-01",
       "totals": {
         "accept": 5,
@@ -1285,7 +1285,7 @@
       "map_url": "https://maps.google.com/?cid=13604554684744408955",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 8,
@@ -1383,7 +1383,7 @@
       "map_url": "https://maps.google.com/?cid=1283279496948274257",
       "nearest_station": "日吉本町駅",
       "station_kana": "ひよしほんちょう えき",
-      "walk_minutes": "3",
+      "walk_minutes": 3,
       "updated": "2025-04-01",
       "totals": {
         "accept": 9,
@@ -1481,7 +1481,7 @@
       "map_url": "https://maps.google.com/?cid=17930357459612784685",
       "nearest_station": "日吉本町駅",
       "station_kana": "ひよしほんちょう えき",
-      "walk_minutes": "3",
+      "walk_minutes": 3,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -1579,7 +1579,7 @@
       "map_url": "https://maps.google.com/?cid=3686351691807231092",
       "nearest_station": "日吉本町駅",
       "station_kana": "ひよしほんちょう えき",
-      "walk_minutes": "3",
+      "walk_minutes": 3,
       "updated": "2025-04-01",
       "totals": {
         "accept": 13,
@@ -1676,7 +1676,7 @@
       "map_url": "https://maps.google.com/?cid=14439652975982416963",
       "nearest_station": "日吉本町駅",
       "station_kana": "ひよしほんちょう えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 5,
@@ -1774,7 +1774,7 @@
       "map_url": "https://maps.google.com/?cid=12605518035642596095",
       "nearest_station": "日吉本町駅",
       "station_kana": "ひよしほんちょう えき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 12,
@@ -1871,7 +1871,7 @@
       "map_url": "https://maps.google.com/?cid=15704695963566997803",
       "nearest_station": "日吉本町駅",
       "station_kana": "ひよしほんちょう えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 5,
@@ -1968,7 +1968,7 @@
       "map_url": "https://maps.google.com/?cid=8039750117215476436",
       "nearest_station": "日吉本町駅",
       "station_kana": "ひよしほんちょう えき",
-      "walk_minutes": "5",
+      "walk_minutes": 5,
       "updated": "2025-04-01",
       "totals": {
         "accept": 7,
@@ -2066,7 +2066,7 @@
       "map_url": "https://maps.google.com/?cid=9974789176088082531",
       "nearest_station": "高田駅",
       "station_kana": "たかだ えき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 2,
@@ -2164,7 +2164,7 @@
       "map_url": "https://maps.google.com/?cid=8919426728818398577",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "3",
+      "walk_minutes": 3,
       "updated": "2025-04-01",
       "totals": {
         "accept": 2,
@@ -2261,7 +2261,7 @@
       "map_url": "https://maps.google.com/?cid=8681950115849938136",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 6,
@@ -2359,7 +2359,7 @@
       "map_url": "https://maps.google.com/?cid=133913106740443876",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -2457,7 +2457,7 @@
       "map_url": "https://maps.google.com/?cid=9454293232621175953",
       "nearest_station": "日吉本町駅",
       "station_kana": "ひよしほんちょう えき",
-      "walk_minutes": "13",
+      "walk_minutes": 13,
       "updated": "2025-04-01",
       "totals": {
         "accept": 17,
@@ -2555,7 +2555,7 @@
       "map_url": "https://maps.google.com/?cid=4204802428231622655",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "10",
+      "walk_minutes": 10,
       "updated": "2025-04-01",
       "totals": {
         "accept": 5,
@@ -2653,7 +2653,7 @@
       "map_url": "https://maps.google.com/?cid=787871662530263547",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 8,
@@ -2751,7 +2751,7 @@
       "map_url": "https://maps.google.com/?cid=16548375992921782548",
       "nearest_station": "日吉本町駅",
       "station_kana": "ひよしほんちょう えき",
-      "walk_minutes": "12",
+      "walk_minutes": 12,
       "updated": "2025-04-01",
       "totals": {
         "accept": 2,
@@ -2849,7 +2849,7 @@
       "map_url": "https://maps.google.com/?cid=13106646131675833931",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "14",
+      "walk_minutes": 14,
       "updated": "2025-04-01",
       "totals": {
         "accept": 15,
@@ -2946,7 +2946,7 @@
       "map_url": "https://maps.google.com/?cid=6352920311730408135",
       "nearest_station": "高田駅",
       "station_kana": "たかだ えき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 8,
@@ -3044,7 +3044,7 @@
       "map_url": "https://maps.google.com/?cid=9396006329328699631",
       "nearest_station": "高田駅",
       "station_kana": "たかだ えき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 4,
@@ -3142,7 +3142,7 @@
       "map_url": "https://maps.google.com/?cid=795560805079571057",
       "nearest_station": "高田駅",
       "station_kana": "たかだ えき",
-      "walk_minutes": "1",
+      "walk_minutes": 1,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -3240,7 +3240,7 @@
       "map_url": "https://maps.google.com/?cid=16933957469385260884",
       "nearest_station": "高田駅",
       "station_kana": "たかだ えき",
-      "walk_minutes": "3",
+      "walk_minutes": 3,
       "updated": "2025-04-01",
       "totals": {
         "accept": 3,
@@ -3338,7 +3338,7 @@
       "map_url": "https://maps.google.com/?cid=7626428599501457926",
       "nearest_station": "高田駅",
       "station_kana": "たかだ えき",
-      "walk_minutes": "1",
+      "walk_minutes": 1,
       "updated": "2025-04-01",
       "totals": {
         "accept": 2,
@@ -3436,7 +3436,7 @@
       "map_url": "https://maps.google.com/?cid=7751099625884830647",
       "nearest_station": "高田駅",
       "station_kana": "たかだ えき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 3,
@@ -3534,7 +3534,7 @@
       "map_url": "https://maps.google.com/?cid=12537984535841471345",
       "nearest_station": "高田駅",
       "station_kana": "たかだ えき",
-      "walk_minutes": "11",
+      "walk_minutes": 11,
       "updated": "2025-04-01",
       "totals": {
         "accept": 8,
@@ -3632,7 +3632,7 @@
       "map_url": "https://maps.google.com/?cid=3419398851282077971",
       "nearest_station": "高田駅",
       "station_kana": "たかだ えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 6,
@@ -3730,7 +3730,7 @@
       "map_url": "https://maps.google.com/?cid=4874087399444974162",
       "nearest_station": "高田駅",
       "station_kana": "たかだ えき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 4,
@@ -3828,7 +3828,7 @@
       "map_url": "https://maps.google.com/?cid=1189381388484374751",
       "nearest_station": "高田駅",
       "station_kana": "たかだ えき",
-      "walk_minutes": "15",
+      "walk_minutes": 15,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -3926,7 +3926,7 @@
       "map_url": "https://maps.google.com/?cid=14717894369401166831",
       "nearest_station": "新羽駅",
       "station_kana": "しん はね えき",
-      "walk_minutes": "10",
+      "walk_minutes": 10,
       "updated": "2025-04-01",
       "totals": {
         "accept": 9,
@@ -4024,7 +4024,7 @@
       "map_url": "https://maps.google.com/?cid=17628665038648190957",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "11",
+      "walk_minutes": 11,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -4122,7 +4122,7 @@
       "map_url": "https://maps.google.com/?cid=5475732957261791322",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 6,
@@ -4220,7 +4220,7 @@
       "map_url": "https://maps.google.com/?cid=6019063931784738804",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 4,
@@ -4318,7 +4318,7 @@
       "map_url": "https://maps.google.com/?cid=14592604322847215381",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "4",
+      "walk_minutes": 4,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -4416,7 +4416,7 @@
       "map_url": "https://maps.google.com/?cid=15450413479737193608",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "3",
+      "walk_minutes": 3,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -4514,7 +4514,7 @@
       "map_url": "https://maps.google.com/?cid=5102384291662947456",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 4,
@@ -4612,7 +4612,7 @@
       "map_url": "https://maps.google.com/?cid=14568712869729033118",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 9,
@@ -4710,7 +4710,7 @@
       "map_url": "https://maps.google.com/?cid=14527848886318994848",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "7",
+      "walk_minutes": 7,
       "updated": "2025-04-01",
       "totals": {
         "accept": 5,
@@ -4808,7 +4808,7 @@
       "map_url": "https://maps.google.com/?cid=5500051003582131613",
       "nearest_station": "高田駅",
       "station_kana": "たかだ えき",
-      "walk_minutes": "10",
+      "walk_minutes": 10,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -4906,7 +4906,7 @@
       "map_url": "https://maps.google.com/?cid=13152203050672310936",
       "nearest_station": "日吉本町駅",
       "station_kana": "ひよしほんちょう えき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 4,
@@ -5004,7 +5004,7 @@
       "map_url": "https://maps.google.com/?cid=15023933823284592167",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -5102,7 +5102,7 @@
       "map_url": "https://maps.google.com/?cid=12665269022854697914",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "3",
+      "walk_minutes": 3,
       "updated": "2025-04-01",
       "totals": {
         "accept": 2,
@@ -5198,7 +5198,7 @@
       "map_url": "https://maps.google.com/?cid=1742186145106649400",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 8,
@@ -5296,7 +5296,7 @@
       "map_url": "https://maps.google.com/?cid=2497086856897410352",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 5,
@@ -5394,7 +5394,7 @@
       "map_url": "https://maps.google.com/?cid=6356616589048991833",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 14,
@@ -5492,7 +5492,7 @@
       "map_url": "https://maps.google.com/?cid=3553907803523963060",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "5",
+      "walk_minutes": 5,
       "updated": "2025-04-01",
       "totals": {
         "accept": 4,
@@ -5590,7 +5590,7 @@
       "map_url": "https://maps.google.com/?cid=15572382129809802685",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "7",
+      "walk_minutes": 7,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -5688,7 +5688,7 @@
       "map_url": "https://maps.google.com/?cid=7046410975007993086",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -5786,7 +5786,7 @@
       "map_url": "https://maps.google.com/?cid=1678755130596991003",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -5884,7 +5884,7 @@
       "map_url": "https://maps.google.com/?cid=6003385974520715478",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 6,
@@ -5982,7 +5982,7 @@
       "map_url": "https://maps.google.com/?cid=13478205624683504219",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "11",
+      "walk_minutes": 11,
       "updated": "2025-04-01",
       "totals": {
         "accept": 3,
@@ -6080,7 +6080,7 @@
       "map_url": "https://maps.google.com/?cid=8891763550229536035",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "11",
+      "walk_minutes": 11,
       "updated": "2025-04-01",
       "totals": {
         "accept": 3,
@@ -6178,7 +6178,7 @@
       "map_url": "https://maps.google.com/?cid=10353559374098582326",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "11",
+      "walk_minutes": 11,
       "updated": "2025-04-01",
       "totals": {
         "accept": 4,
@@ -6276,7 +6276,7 @@
       "map_url": "https://maps.google.com/?cid=1456853169132052564",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "14",
+      "walk_minutes": 14,
       "updated": "2025-04-01",
       "totals": {
         "accept": 2,
@@ -6374,7 +6374,7 @@
       "map_url": "https://maps.google.com/?cid=3332092958829053326",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "11",
+      "walk_minutes": 11,
       "updated": "2025-04-01",
       "totals": {
         "accept": 13,
@@ -6472,7 +6472,7 @@
       "map_url": "https://maps.google.com/?cid=2534306337361255909",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "5",
+      "walk_minutes": 5,
       "updated": "2025-04-01",
       "totals": {
         "accept": 4,
@@ -6570,7 +6570,7 @@
       "map_url": "https://maps.google.com/?cid=6684032815184946896",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 14,
@@ -6668,7 +6668,7 @@
       "map_url": "https://maps.google.com/?cid=9555396974245904302",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 8,
@@ -6766,7 +6766,7 @@
       "map_url": "https://maps.google.com/?cid=8722668516260390322",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 9,
@@ -6864,7 +6864,7 @@
       "map_url": "https://maps.google.com/?cid=16807357050388556052",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -6962,7 +6962,7 @@
       "map_url": "https://maps.google.com/?cid=8596189769130883493",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "10",
+      "walk_minutes": 10,
       "updated": "2025-04-01",
       "totals": {
         "accept": 15,
@@ -7060,7 +7060,7 @@
       "map_url": "https://maps.google.com/?cid=9047719715835942052",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 5,
@@ -7158,7 +7158,7 @@
       "map_url": "https://maps.google.com/?cid=13949536047226517933",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 5,
@@ -7256,7 +7256,7 @@
       "map_url": "https://maps.google.com/?cid=17436087477363700836",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "7",
+      "walk_minutes": 7,
       "updated": "2025-04-01",
       "totals": {
         "accept": 2,
@@ -7354,7 +7354,7 @@
       "map_url": "https://maps.google.com/?cid=7993301234135201934",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "11",
+      "walk_minutes": 11,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -7452,7 +7452,7 @@
       "map_url": "https://maps.google.com/?cid=18167514633964426168",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 3,
@@ -7550,7 +7550,7 @@
       "map_url": "https://maps.google.com/?cid=17682356721439793686",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "16",
+      "walk_minutes": 16,
       "updated": "2025-04-01",
       "totals": {
         "accept": 3,
@@ -7648,7 +7648,7 @@
       "map_url": "https://maps.google.com/?cid=3372365880946549054",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 8,
@@ -7746,7 +7746,7 @@
       "map_url": "https://maps.google.com/?cid=2462922250537221583",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "1",
+      "walk_minutes": 1,
       "updated": "2025-04-01",
       "totals": {
         "accept": 8,
@@ -7844,7 +7844,7 @@
       "map_url": "https://maps.google.com/?cid=9161134281224686002",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 8,
@@ -7942,7 +7942,7 @@
       "map_url": "https://maps.google.com/?cid=5136799195183961680",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 6,
@@ -8040,7 +8040,7 @@
       "map_url": "https://maps.google.com/?cid=3074873590614070413",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 4,
@@ -8138,7 +8138,7 @@
       "map_url": "https://maps.google.com/?cid=5099963441913273117",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -8236,7 +8236,7 @@
       "map_url": "https://maps.google.com/?cid=6366156800715038215",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 3,
@@ -8334,7 +8334,7 @@
       "map_url": "https://maps.google.com/?cid=16936467607285187933",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "3",
+      "walk_minutes": 3,
       "updated": "2025-04-01",
       "totals": {
         "accept": 19,
@@ -8432,7 +8432,7 @@
       "map_url": "https://maps.google.com/?cid=5441802059257783827",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "5",
+      "walk_minutes": 5,
       "updated": "2025-04-01",
       "totals": {
         "accept": 6,
@@ -8530,7 +8530,7 @@
       "map_url": "https://maps.google.com/?cid=1643019786278986154",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 9,
@@ -8628,7 +8628,7 @@
       "map_url": "https://maps.google.com/?cid=3483781887039518142",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "7",
+      "walk_minutes": 7,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -8726,7 +8726,7 @@
       "map_url": "https://maps.google.com/?cid=18270759436308641951",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 15,
@@ -8824,7 +8824,7 @@
       "map_url": "https://maps.google.com/?cid=550291535958121652",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "7",
+      "walk_minutes": 7,
       "updated": "2025-04-01",
       "totals": {
         "accept": 13,
@@ -8922,7 +8922,7 @@
       "map_url": "https://maps.google.com/?cid=6083307767882800543",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "10",
+      "walk_minutes": 10,
       "updated": "2025-04-01",
       "totals": {
         "accept": 28,
@@ -9020,7 +9020,7 @@
       "map_url": "https://maps.google.com/?cid=570756107517769049",
       "nearest_station": "北新横浜駅",
       "station_kana": "きたしん よこはまえき",
-      "walk_minutes": "11",
+      "walk_minutes": 11,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -9118,7 +9118,7 @@
       "map_url": "https://maps.google.com/?cid=6640735856784631484",
       "nearest_station": "北新横浜駅",
       "station_kana": "きたしん よこはまえき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 5,
@@ -9216,7 +9216,7 @@
       "map_url": "https://maps.google.com/?cid=12931110844109300739",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 5,
@@ -9314,7 +9314,7 @@
       "map_url": "https://maps.google.com/?cid=1695800871240131102",
       "nearest_station": "北新横浜駅",
       "station_kana": "きたしん よこはまえき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 2,
@@ -9412,7 +9412,7 @@
       "map_url": "https://maps.google.com/?cid=2676927977747901871",
       "nearest_station": "新羽駅",
       "station_kana": "しん はね えき",
-      "walk_minutes": "1",
+      "walk_minutes": 1,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -9510,7 +9510,7 @@
       "map_url": "https://maps.google.com/?cid=16939733256837428911",
       "nearest_station": "新羽駅",
       "station_kana": "しん はね えき",
-      "walk_minutes": "4",
+      "walk_minutes": 4,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -9608,7 +9608,7 @@
       "map_url": "https://maps.google.com/?cid=8266549736306309443",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 7,
@@ -9706,7 +9706,7 @@
       "map_url": "https://maps.google.com/?cid=11146655340546214998",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 2,
@@ -9804,7 +9804,7 @@
       "map_url": "https://maps.google.com/?cid=1343885640577516768",
       "nearest_station": "菊名駅",
       "station_kana": "きくなえき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 6,
@@ -9902,7 +9902,7 @@
       "map_url": "https://maps.google.com/?cid=7868327560286207600",
       "nearest_station": "新横浜駅",
       "station_kana": "しんよこはまえき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 9,
@@ -10000,7 +10000,7 @@
       "map_url": "https://maps.google.com/?cid=14182774340831929979",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "10",
+      "walk_minutes": 10,
       "updated": "2025-04-01",
       "totals": {
         "accept": 2,
@@ -10098,7 +10098,7 @@
       "map_url": "https://maps.google.com/?cid=5335396108723521378",
       "nearest_station": "新横浜駅",
       "station_kana": "しんよこはまえき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 9,
@@ -10196,7 +10196,7 @@
       "map_url": "https://maps.google.com/?cid=14058616145991846520",
       "nearest_station": "新横浜駅",
       "station_kana": "しんよこはまえき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 8,
@@ -10294,7 +10294,7 @@
       "map_url": "https://maps.google.com/?cid=9156083472015116886",
       "nearest_station": "新横浜駅",
       "station_kana": "しんよこはまえき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -10392,7 +10392,7 @@
       "map_url": "https://maps.google.com/?cid=18139995068442836747",
       "nearest_station": "新横浜駅",
       "station_kana": "しんよこはまえき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 11,
@@ -10490,7 +10490,7 @@
       "map_url": "https://maps.google.com/?cid=15892592637556186859",
       "nearest_station": "新横浜駅",
       "station_kana": "しんよこはまえき",
-      "walk_minutes": "7",
+      "walk_minutes": 7,
       "updated": "2025-04-01",
       "totals": {
         "accept": 5,
@@ -10588,7 +10588,7 @@
       "map_url": "https://maps.google.com/?cid=3201634689270515873",
       "nearest_station": "新横浜駅",
       "station_kana": "しんよこはまえき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 13,
@@ -10686,7 +10686,7 @@
       "map_url": "https://maps.google.com/?cid=14520953165118299276",
       "nearest_station": "新横浜駅",
       "station_kana": "しんよこはまえき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 7,
@@ -10784,7 +10784,7 @@
       "map_url": "https://maps.google.com/?cid=15103266619319498805",
       "nearest_station": "小机駅",
       "station_kana": "こづくえ えき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -10882,7 +10882,7 @@
       "map_url": "https://maps.google.com/?cid=3413805028578412476",
       "nearest_station": "小机駅",
       "station_kana": "こづくえ えき",
-      "walk_minutes": "1",
+      "walk_minutes": 1,
       "updated": "2025-04-01",
       "totals": {
         "accept": 2,
@@ -10980,7 +10980,7 @@
       "map_url": "https://maps.google.com/?cid=17435862794583574322",
       "nearest_station": "菊名駅",
       "station_kana": "きくなえき",
-      "walk_minutes": "16",
+      "walk_minutes": 16,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -11078,7 +11078,7 @@
       "map_url": "https://maps.google.com/?cid=12583676764916157381",
       "nearest_station": "菊名駅",
       "station_kana": "きくなえき",
-      "walk_minutes": "10",
+      "walk_minutes": 10,
       "updated": "2025-04-01",
       "totals": {
         "accept": 17,
@@ -11176,7 +11176,7 @@
       "map_url": "https://maps.google.com/?cid=11608031498556947128",
       "nearest_station": "菊名駅",
       "station_kana": "きくなえき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 8,
@@ -11274,7 +11274,7 @@
       "map_url": "https://maps.google.com/?cid=18335881285699283840",
       "nearest_station": "菊名駅",
       "station_kana": "きくなえき",
-      "walk_minutes": "5",
+      "walk_minutes": 5,
       "updated": "2025-04-01",
       "totals": {
         "accept": 3,
@@ -11372,7 +11372,7 @@
       "map_url": "https://maps.google.com/?cid=1071380562748966159",
       "nearest_station": "菊名駅",
       "station_kana": "きくなえき",
-      "walk_minutes": "3",
+      "walk_minutes": 3,
       "updated": "2025-04-01",
       "totals": {
         "accept": 6,
@@ -11470,7 +11470,7 @@
       "map_url": "https://maps.google.com/?cid=3645874141753733604",
       "nearest_station": "菊名駅",
       "station_kana": "きくなえき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -11568,7 +11568,7 @@
       "map_url": "https://maps.google.com/?cid=17124925421268640965",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 3,
@@ -11666,7 +11666,7 @@
       "map_url": "https://maps.google.com/?cid=9816246843588808212",
       "nearest_station": "菊名駅",
       "station_kana": "きくなえき",
-      "walk_minutes": "3",
+      "walk_minutes": 3,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -11764,7 +11764,7 @@
       "map_url": "https://maps.google.com/?cid=12402856245868844744",
       "nearest_station": "菊名駅",
       "station_kana": "きくなえき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -11862,7 +11862,7 @@
       "map_url": "https://maps.google.com/?cid=16139365503080370619",
       "nearest_station": "新横浜駅",
       "station_kana": "しんよこはまえき",
-      "walk_minutes": "10",
+      "walk_minutes": 10,
       "updated": "2025-04-01",
       "totals": {
         "accept": 3,
@@ -11960,7 +11960,7 @@
       "map_url": "https://maps.google.com/?cid=18131802762111623344",
       "nearest_station": "新横浜駅",
       "station_kana": "しんよこはまえき",
-      "walk_minutes": "5",
+      "walk_minutes": 5,
       "updated": "2025-04-01",
       "totals": {
         "accept": 3,
@@ -12058,7 +12058,7 @@
       "map_url": "https://maps.google.com/?cid=5559648245052289358",
       "nearest_station": "新横浜駅",
       "station_kana": "しんよこはまえき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -12156,7 +12156,7 @@
       "map_url": "https://maps.google.com/?cid=8170443963505173908",
       "nearest_station": "大口駅",
       "station_kana": "おおぐち えき",
-      "walk_minutes": "14",
+      "walk_minutes": 14,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -12254,7 +12254,7 @@
       "map_url": "https://maps.google.com/?cid=1592050161556769438",
       "nearest_station": "大口駅",
       "station_kana": "おおぐち えき",
-      "walk_minutes": "18",
+      "walk_minutes": 18,
       "updated": "2025-04-01",
       "totals": {
         "accept": 11,
@@ -12352,7 +12352,7 @@
       "map_url": "https://maps.google.com/?cid=3287192786423838371",
       "nearest_station": "池田駅",
       "station_kana": "いけだ",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 4,
@@ -12450,7 +12450,7 @@
       "map_url": "https://maps.google.com/?cid=9638381845036295254",
       "nearest_station": "日吉本町駅",
       "station_kana": "ひよしほんちょう えき",
-      "walk_minutes": "13",
+      "walk_minutes": 13,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -12548,7 +12548,7 @@
       "map_url": "https://maps.google.com/?cid=15568994210773340363",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 4,
@@ -12646,7 +12646,7 @@
       "map_url": "https://maps.google.com/?cid=10515094959519062208",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 5,
@@ -12743,7 +12743,7 @@
       "map_url": "https://maps.google.com/?cid=5773355168198538002",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "1",
+      "walk_minutes": 1,
       "updated": "2025-04-01",
       "totals": {
         "accept": 7,
@@ -12841,7 +12841,7 @@
       "map_url": "https://maps.google.com/?cid=11822015072737435256",
       "nearest_station": "日吉本町駅",
       "station_kana": "ひよしほんちょう えき",
-      "walk_minutes": "3",
+      "walk_minutes": 3,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -12938,7 +12938,7 @@
       "map_url": "https://maps.google.com/?cid=10830675973696907887",
       "nearest_station": "日吉本町駅",
       "station_kana": "ひよしほんちょう えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 5,
@@ -13035,7 +13035,7 @@
       "map_url": "https://maps.google.com/?cid=5687296003531978005",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "3",
+      "walk_minutes": 3,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -13133,7 +13133,7 @@
       "map_url": "https://maps.google.com/?cid=4092775845370431209",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "5",
+      "walk_minutes": 5,
       "updated": "2025-04-01",
       "totals": {
         "accept": 4,
@@ -13231,7 +13231,7 @@
       "map_url": "https://maps.google.com/?cid=2538037226375465019",
       "nearest_station": "日吉駅",
       "station_kana": "ひよしえき",
-      "walk_minutes": "11",
+      "walk_minutes": 11,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -13329,7 +13329,7 @@
       "map_url": "https://maps.google.com/?cid=15110181192676114955",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -13427,7 +13427,7 @@
       "map_url": "https://maps.google.com/?cid=4810306996863588962",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -13525,7 +13525,7 @@
       "map_url": "https://maps.google.com/?cid=471450671807163214",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 2,
@@ -13623,7 +13623,7 @@
       "map_url": "https://maps.google.com/?cid=16447723174820603893",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "5",
+      "walk_minutes": 5,
       "updated": "2025-04-01",
       "totals": {
         "accept": 5,
@@ -13721,7 +13721,7 @@
       "map_url": "https://maps.google.com/?cid=16139488438435842941",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 7,
@@ -13819,7 +13819,7 @@
       "map_url": "https://maps.google.com/?cid=12036646804840441836",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "2",
+      "walk_minutes": 2,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -13917,7 +13917,7 @@
       "map_url": "https://maps.google.com/?cid=9009461528283125987",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -14013,7 +14013,7 @@
       "map_url": "https://maps.google.com/?cid=2779275228422338704",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "10",
+      "walk_minutes": 10,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -14111,7 +14111,7 @@
       "map_url": "https://maps.google.com/?cid=10951039812934456507",
       "nearest_station": "新綱島駅",
       "station_kana": "しん つなしま えき",
-      "walk_minutes": "13",
+      "walk_minutes": 13,
       "updated": "2025-04-01",
       "totals": {
         "accept": 7,
@@ -14209,7 +14209,7 @@
       "map_url": "https://maps.google.com/?cid=17543866842089821739",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 7,
@@ -14307,7 +14307,7 @@
       "map_url": "https://maps.google.com/?cid=187239396714211216",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -14405,7 +14405,7 @@
       "map_url": "https://maps.google.com/?cid=938308904996929950",
       "nearest_station": "菊名駅",
       "station_kana": "きくなえき",
-      "walk_minutes": "4",
+      "walk_minutes": 4,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -14503,7 +14503,7 @@
       "map_url": "https://maps.google.com/?cid=7473546741165787599",
       "nearest_station": "大倉山駅",
       "station_kana": "おおくらやま えき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 2,
@@ -14601,7 +14601,7 @@
       "map_url": "https://maps.google.com/?cid=12355768764629261145",
       "nearest_station": "新横浜駅",
       "station_kana": "しんよこはまえき",
-      "walk_minutes": "11",
+      "walk_minutes": 11,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -14699,7 +14699,7 @@
       "map_url": "https://maps.google.com/?cid=9621238787516215413",
       "nearest_station": "新横浜駅",
       "station_kana": "しんよこはまえき",
-      "walk_minutes": "9",
+      "walk_minutes": 9,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -14797,7 +14797,7 @@
       "map_url": "https://maps.google.com/?cid=10804271623775286654",
       "nearest_station": "新横浜駅",
       "station_kana": "しんよこはまえき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 3,
@@ -14895,7 +14895,7 @@
       "map_url": "https://maps.google.com/?cid=13724679674608120658",
       "nearest_station": "新横浜駅",
       "station_kana": "しんよこはまえき",
-      "walk_minutes": "5",
+      "walk_minutes": 5,
       "updated": "2025-04-01",
       "totals": {
         "accept": 12,
@@ -14991,7 +14991,7 @@
       "map_url": "https://maps.google.com/?cid=11303499125502899427",
       "nearest_station": "菊名駅",
       "station_kana": "きくなえき",
-      "walk_minutes": "5",
+      "walk_minutes": 5,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -15089,7 +15089,7 @@
       "map_url": "https://maps.google.com/?cid=14239222921568764633",
       "nearest_station": "菊名駅",
       "station_kana": "きくなえき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 2,
@@ -15187,7 +15187,7 @@
       "map_url": "https://maps.google.com/?cid=13785896471661336353",
       "nearest_station": "戸塚駅",
       "station_kana": "とつかえき",
-      "walk_minutes": "25",
+      "walk_minutes": 25,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -15285,7 +15285,7 @@
       "map_url": "https://maps.google.com/?cid=3381843509597255552",
       "nearest_station": "高田駅",
       "station_kana": "たかだ えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 3,
@@ -15381,7 +15381,7 @@
       "map_url": "https://maps.google.com/?cid=259097597118571709",
       "nearest_station": "日吉本町駅",
       "station_kana": "ひよしほんちょう えき",
-      "walk_minutes": "6",
+      "walk_minutes": 6,
       "updated": "2025-04-01",
       "totals": {
         "accept": 3,
@@ -15479,7 +15479,7 @@
       "map_url": "https://maps.google.com/?cid=2202488721305287478",
       "nearest_station": "綱島駅",
       "station_kana": "つなしま えき",
-      "walk_minutes": "15",
+      "walk_minutes": 15,
       "updated": "2025-04-01",
       "totals": {
         "accept": 3,
@@ -15577,7 +15577,7 @@
       "map_url": "https://maps.google.com/?cid=3162899301288832624",
       "nearest_station": "菊名駅",
       "station_kana": "きくなえき",
-      "walk_minutes": "8",
+      "walk_minutes": 8,
       "updated": "2025-04-01",
       "totals": {
         "accept": 4,
@@ -15675,7 +15675,7 @@
       "map_url": "https://maps.google.com/?cid=4051805106042979612",
       "nearest_station": "新羽駅",
       "station_kana": "しん はね えき",
-      "walk_minutes": "10",
+      "walk_minutes": 10,
       "updated": "2025-04-01",
       "totals": {
         "accept": 0,
@@ -15773,7 +15773,7 @@
       "map_url": "https://maps.google.com/?cid=11875629043987771471",
       "nearest_station": "新横浜駅",
       "station_kana": "しんよこはまえき",
-      "walk_minutes": "1",
+      "walk_minutes": 1,
       "updated": "2025-04-01",
       "totals": {
         "accept": 1,
@@ -15871,7 +15871,7 @@
       "map_url": "https://maps.google.com/?cid=413454699164172053",
       "nearest_station": "片倉町駅",
       "station_kana": "かたくらちょう えき",
-      "walk_minutes": "10",
+      "walk_minutes": 10,
       "updated": "2025-04-01",
       "totals": {
         "accept": 4,
