@@ -16,7 +16,6 @@ from bs4 import BeautifulSoup
 
 DATASET_PAGE = "https://data.city.yokohama.lg.jp/dataset/kodomo_nyusho-jokyo"
 
-# GitHub Actions の env で上書き可能
 WARD_FILTER = (os.getenv("WARD_FILTER", "港北区") or "").strip()
 if WARD_FILTER == "":
     WARD_FILTER = None
@@ -71,9 +70,6 @@ def detect_month(rows: List[Dict[str, str]]) -> str:
 
 
 def read_csv_from_url(url: str) -> List[Dict[str, str]]:
-    """
-    タイトル行が先頭に入っているCSVでも、ヘッダ行を自動検出してDict化する。
-    """
     r = requests.get(url, timeout=60)
     r.raise_for_status()
 
@@ -128,10 +124,6 @@ def read_csv_from_url(url: str) -> List[Dict[str, str]]:
 
 
 def scrape_csv_urls() -> Dict[str, str]:
-    """
-    accept(受入可能数) / wait(入所待ち人数) は必須
-    enrolled(入所児童数) は見つかれば使う
-    """
     html = requests.get(DATASET_PAGE, timeout=30).text
     soup = BeautifulSoup(html, "html.parser")
 
@@ -141,7 +133,6 @@ def scrape_csv_urls() -> Dict[str, str]:
     links = list(dict.fromkeys(links))
 
     best: Dict[str, str] = {}
-
     for url in links:
         if "0926_" in url:
             best["accept"] = url
@@ -174,9 +165,6 @@ def scrape_csv_urls() -> Dict[str, str]:
 
 
 def load_master() -> Dict[str, Dict[str, str]]:
-    """
-    data/master_facilities.csv があれば参照して住所/緯度経度/地図URL/最寄り駅などを補完
-    """
     if not MASTER_CSV.exists():
         return {}
     out: Dict[str, Dict[str, str]] = {}
@@ -196,18 +184,9 @@ def guess_facility_id_key(rows: List[Dict[str, str]]) -> str:
     print("DEBUG: header columns =", header)
 
     candidates = [
-        "施設番号",
-        "施設・事業所番号",
-        "施設事業所番号",
-        "事業所番号",
-        "施設ID",
-        "施設ＩＤ",
-        "施設・事業所ID",
-        "施設・事業所ＩＤ",
-        "施設No",
-        "施設Ｎｏ",
-        "事業所No",
-        "事業所Ｎｏ",
+        "施設番号", "施設・事業所番号", "施設事業所番号", "事業所番号",
+        "施設ID", "施設ＩＤ", "施設・事業所ID", "施設・事業所ＩＤ",
+        "施設No", "施設Ｎｏ", "事業所No", "事業所Ｎｏ",
     ]
     for k in candidates:
         if k in rows[0]:
@@ -318,7 +297,6 @@ def main() -> None:
 
     fid_key = guess_facility_id_key(accept_rows)
     A = index_by_key(accept_rows, fid_key)
-
     W = index_by_key(wait_rows, fid_key) if wait_rows and fid_key in wait_rows[0] else {}
     E = index_by_key(enrolled_rows, fid_key) if enrolled_rows and fid_key in enrolled_rows[0] else {}
 
@@ -344,20 +322,18 @@ def main() -> None:
         name = str(ar.get(name_key, "")).strip() if name_key else ""
 
         m = master.get(fid, {})
-
-        # master優先の補完
         address = (m.get("address") or "").strip()
         lat = (m.get("lat") or "").strip()
         lng = (m.get("lng") or "").strip()
         map_url = (m.get("map_url") or "").strip() or build_map_url(name, ward, address, lat, lng)
 
-        # ★ 追加：最寄り駅・徒歩・その他（将来拡張用）
+        # ★ master追加列（UIで使う）
         nearest_station = (m.get("nearest_station") or "").strip()
-        walk_minutes = (m.get("walk_minutes") or "").strip()
-        facility_type = (m.get("facility_type") or "").strip()
+        walk_minutes = to_int(m.get("walk_minutes"))
         phone = (m.get("phone") or "").strip()
         website = (m.get("website") or "").strip()
         notes = (m.get("notes") or "").strip()
+        facility_type = (m.get("facility_type") or "").strip()
 
         tot_accept = get_total(ar)
         tot_wait = get_total(wr) if wr else None
@@ -380,20 +356,14 @@ def main() -> None:
                 "wait_per_capacity_est": ratio_opt(w, cap_est),
             }
 
-        g0 = ages_0_5.get("0", {})
-        g1 = ages_0_5.get("1", {})
-        g2 = ages_0_5.get("2", {})
-        g3 = ages_0_5.get("3", {})
-        g4 = ages_0_5.get("4", {})
-        g5 = ages_0_5.get("5", {})
-
+        g3, g4, g5 = ages_0_5.get("3", {}), ages_0_5.get("4", {}), ages_0_5.get("5", {})
         w_35 = sum_opt(g3.get("wait"), g4.get("wait"), g5.get("wait"))
         cap_35 = sum_opt(g3.get("capacity_est"), g4.get("capacity_est"), g5.get("capacity_est"))
 
         age_groups = {
-            "0": g0,
-            "1": g1,
-            "2": g2,
+            "0": ages_0_5.get("0", {}),
+            "1": ages_0_5.get("1", {}),
+            "2": ages_0_5.get("2", {}),
             "3-5": {
                 "accept": sum_opt(g3.get("accept"), g4.get("accept"), g5.get("accept")),
                 "wait": w_35,
@@ -408,20 +378,20 @@ def main() -> None:
                 "id": fid,
                 "name": name,
                 "ward": ward,
+
+                # ★ ここがUIで表示される
                 "address": address,
-                "lat": lat,
-                "lng": lng,
                 "map_url": map_url,
-
-                # ★ 追加（一覧4列表示用）
                 "nearest_station": nearest_station,
-                "walk_minutes": (int(walk_minutes) if walk_minutes.isdigit() else walk_minutes),
+                "walk_minutes": walk_minutes,
 
-                # ★ 追加（将来：園詳細などで使える）
-                "facility_type": facility_type,
+                # 使いたければUI側で表示できる
                 "phone": phone,
                 "website": website,
                 "notes": notes,
+                "facility_type": facility_type,
+                "lat": lat,
+                "lng": lng,
 
                 "updated": month,
                 "totals": {
@@ -440,7 +410,6 @@ def main() -> None:
     if len(facilities) == 0:
         raise RuntimeError("facilitiesが0件です（区フィルタ/列名不一致の可能性）")
 
-    # 先に月次JSONを書いてから months.json を更新（404事故防止）
     month_path = DATA_DIR / f"{month}.json"
     month_path.write_text(
         json.dumps({"month": month, "ward": (WARD_FILTER or "横浜市"), "facilities": facilities}, ensure_ascii=False, indent=2),
