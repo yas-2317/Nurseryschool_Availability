@@ -99,7 +99,8 @@ jobs:
           test -f scripts/update_from_yokohama.py
           python -V
           python -c "import bs4; print('bs4 OK', bs4.__version__)"
-          python -c "import pykakasi; print('pykakasi OK', pykakasi.__version__)"
+          # ★ pykakasi は __version__ が無いことがあるので、kakasi() が作れるかで確認
+          python -c "from pykakasi import kakasi; k=kakasi(); print('pykakasi OK')"
           ls -la data || true
 
       - name: Optional wipe station cache
