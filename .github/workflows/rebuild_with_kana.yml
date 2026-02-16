@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>横浜市港北区 保育園 受入可能数・入所待ち人数（年齢別）</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<header>
+  <div class="container">
+    <h1>横浜市港北区：保育園ごとの「受入可能数」「入所待ち人数」（年齢別）</h1>
+    <div class="sub">データ時点：<span id="monthLabel">-</span> / 施設数：<span id="countLabel">-</span></div>
+
+    <div class="controls">
+      <select id="monthSelect"></select>
+
+      <input id="q" placeholder="園名/駅名で検索（例：日吉 / ひよし / べねっせ / しんよこ）" />
+
+      <select id="sort">
+        <option value="wait0_desc">0歳 入所待ち 多い順</option>
+        <option value="wait1_desc">1歳 入所待ち 多い順</option>
+        <option value="wait2_desc">2歳 入所待ち 多い順</option>
+        <option value="wait35_desc">3〜5歳 入所待ち 多い順</option>
+        <option value="wait_desc">合計入所待ち 多い順</option>
+        <option value="accept_desc">合計受入可能 多い順</option>
+
+        <option value="station_walk_asc">駅（あいうえお）×徒歩（短い順）</option>
+        <option value="walk_asc">徒歩（短い順）</option>
+
+        <option value="name_asc">園名（あいうえお）</option>
+      </select>
+
+      <button id="toggleCols">年齢別列：非表示</button>
+      <span class="badge">※「入所待ち人数」は園ごとの申込件数（重複計上あり）</span>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="card">
+    <div class="kpi" id="kpi"></div>
+    <div class="small">住所・地図・最寄り駅・徒歩は <code>data/master_facilities.csv</code> を参照します（未入力なら空欄）。</div>
+  </div>
+
+  <div class="card tablewrap">
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th style="min-width:240px;">園名</th>
+
+          <th style="min-width:260px;">住所</th>
+          <th style="min-width:120px;">地図</th>
+          <th style="min-width:140px;">最寄り駅</th>
+          <th style="min-width:90px;">徒歩</th>
+
+          <th>受入可能（合計）</th>
+          <th>入所待ち（合計）</th>
+          <th>前月比 入所待ち</th>
+          <th>前月比 受入可能</th>
+
+          <th class="agecol">0歳 受入</th><th class="agecol">0歳 待ち</th>
+          <th class="agecol">1歳 受入</th><th class="agecol">1歳 待ち</th>
+          <th class="agecol">2歳 受入</th><th class="agecol">2歳 待ち</th>
+          <th class="agecol">3〜5歳 受入</th><th class="agecol">3〜5歳 待ち</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    出典：横浜市「保育所等の入所状況（毎月1日時点）」の公開データを加工（本サイトは非公式）。
+  </div>
+</main>
+
+<script src="common.js"></script>
+<script>
+let showAgeCols = true;
+
+/* ============================
+   Search helpers (hiragana/kanji both)
+   ============================ */
+
+// カタカナ→ひらがな（濁点/半濁点含めて自然に変換）
+function kataToHira(s){
+  if(!s) return "";
+  return String(s).replace(/[\u30A1-\u30F6]/g, ch => {
+    return String.fromCharCode(ch.charCodeAt(0) - 0x60);
+  });
+}
+
+function normalizeForSearch(s){
+  if(s == null) return "";
+  const x = String(s)
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/　/g, "");
+  return kataToHira(x);
+}
+
+function facilitySearchBlob(f){
+  // raw: name/station, kana: name_kana/station_kana（ひらがな想定）
+  const name = safeStr(f.name);
+  const st   = safeStr(f.nearest_station || "");
+  const nk   = safeStr(f.name_kana || "");
+  const sk   = safeStr(f.station_kana || "");
+  return normalizeForSearch(name + " " + st + " " + nk + " " + sk);
+}
+
+function queryMatchFacility(qRaw, qNorm, f){
+  if(!qRaw) return true;
+
+  // 1) raw検索（漢字・そのまま）
+  const rawBlob = (safeStr(f.name) + " " + safeStr(f.nearest_station || "")).replace(/\s+/g, "").replace(/　/g, "");
+  const qRaw2 = String(qRaw).replace(/\s+/g, "").replace(/　/g, "");
+  if(qRaw2 && rawBlob.includes(qRaw2)) return true;
+
+  // 2) normalized検索（ひらがな入力で name_kana/station_kana に当てる）
+  const blobNorm = facilitySearchBlob(f);
+  return blobNorm.includes(qNorm);
+}
+
+/* ============================
+   Table helpers
+   ============================ */
+
+function setAgeColsVisible(v){
+  showAgeCols = v;
+  document.querySelectorAll('.agecol').forEach(el=>{
+    el.style.display = v ? '' : 'none';
+  });
+  document.getElementById('toggleCols').textContent = v ? '年齢別列：非表示' : '年齢別列：表示';
+}
+
+function getGroups(f){
+  if(f.age_groups) return f.age_groups;
+
+  const ages = f.ages || f.ages_0_5 || {};
+  function v(k, field){ return ages[k]?.[field]; }
+  function sum3(field){
+    const a = Number(v('3',field) ?? 0);
+    const b = Number(v('4',field) ?? 0);
+    const c = Number(v('5',field) ?? 0);
+    const hasAny = (v('3',field)!=null) || (v('4',field)!=null) || (v('5',field)!=null);
+    return hasAny ? (a+b+c) : null;
+  }
+  return {
+    "0": {accept: v('0','accept'), wait: v('0','wait')},
+    "1": {accept: v('1','accept'), wait: v('1','wait')},
+    "2": {accept: v('2','accept'), wait: v('2','wait')},
+    "3-5": {accept: sum3('accept'), wait: sum3('wait')}
+  };
+}
+
+function rowHTML(f, prevF){
+  const addr = safeStr(f.address || '');
+  const map = safeStr(f.map_url || '');
+  const st  = safeStr(f.nearest_station || '');
+  const wmN = (f.walk_minutes == null || f.walk_minutes === "") ? null : Number(f.walk_minutes);
+  const wm  = (Number.isFinite(wmN) ? wmN : null);
+
+  const mapLink = map ? `<a href="${map}" target="_blank" rel="noopener">Google Map</a>` : '';
+
+  const g = getGroups(f);
+  function acc(k){ return fmt(g?.[k]?.accept); }
+  function wai(k){ return fmt(g?.[k]?.wait); }
+
+  const dWait = prevF ? (Number(f.totals?.wait||0) - Number(prevF.totals?.wait||0)) : null;
+  const dAcc  = prevF ? (Number(f.totals?.accept||0) - Number(prevF.totals?.accept||0)) : null;
+  const sign = (n)=> (n==null ? "—" : (n>0 ? `+${n}` : `${n}`));
+
+  return `<tr>
+    <td>
+      <a href="facility.html?id=${encodeURIComponent(f.id)}">${safeStr(f.name)}</a>
+      <div class="small">施設番号：${safeStr(f.id)}</div>
+    </td>
+
+    <td>${addr}</td>
+    <td>${mapLink}</td>
+    <td>${st}</td>
+    <td>${wm==null ? "" : (wm + "分")}</td>
+
+    <td>${fmt(f.totals?.accept)}</td>
+    <td>${fmt(f.totals?.wait)}</td>
+    <td>${sign(dWait)}</td>
+    <td>${sign(dAcc)}</td>
+
+    <td class="agecol">${acc('0')}</td><td class="agecol">${wai('0')}</td>
+    <td class="agecol">${acc('1')}</td><td class="agecol">${wai('1')}</td>
+    <td class="agecol">${acc('2')}</td><td class="agecol">${wai('2')}</td>
+    <td class="agecol">${acc('3-5')}</td><td class="agecol">${wai('3-5')}</td>
+  </tr>`;
+}
+
+function sortFacilities(arr, mode){
+  const a = [...arr];
+
+  function groups(f){ return getGroups(f); }
+  function gwait(f, key){
+    const g = groups(f);
+    const v = g?.[key]?.wait;
+    return Number(v ?? 0);
+  }
+
+  function stationName(f){ return safeStr(f.nearest_station || ""); }
+  function walkMin(f){
+    const v = f.walk_minutes;
+    const n = (v == null || v === "") ? null : Number(v);
+    return (Number.isFinite(n) ? n : 999999);
+  }
+
+  if(mode==='wait_desc'){
+    a.sort((x,y)=>(Number(y.totals?.wait||0)-Number(x.totals?.wait||0)));
+  } else if(mode==='accept_desc'){
+    a.sort((x,y)=>(Number(y.totals?.accept||0)-Number(x.totals?.accept||0)));
+  } else if(mode==='wait0_desc'){
+    a.sort((x,y)=>gwait(y,"0")-gwait(x,"0"));
+  } else if(mode==='wait1_desc'){
+    a.sort((x,y)=>gwait(y,"1")-gwait(x,"1"));
+  } else if(mode==='wait2_desc'){
+    a.sort((x,y)=>gwait(y,"2")-gwait(x,"2"));
+  } else if(mode==='wait35_desc'){
+    a.sort((x,y)=>gwait(y,"3-5")-gwait(x,"3-5"));
+  } else if(mode==='station_walk_asc'){
+    a.sort((x,y)=>{
+      const sx = stationName(x);
+      const sy = stationName(y);
+      const c1 = sx.localeCompare(sy,'ja');
+      if(c1 !== 0) return c1;
+      const c2 = walkMin(x) - walkMin(y);
+      if(c2 !== 0) return c2;
+      return safeStr(x.name).localeCompare(safeStr(y.name),'ja');
+    });
+  } else if(mode==='walk_asc'){
+    a.sort((x,y)=>{
+      const c1 = walkMin(x) - walkMin(y);
+      if(c1 !== 0) return c1;
+      const c2 = stationName(x).localeCompare(stationName(y),'ja');
+      if(c2 !== 0) return c2;
+      return safeStr(x.name).localeCompare(safeStr(y.name),'ja');
+    });
+  } else if(mode==='name_asc'){
+    a.sort((x,y)=>safeStr(x.name).localeCompare(safeStr(y.name),'ja'));
+  }
+  return a;
+}
+
+async function main(){
+  const months = await loadJSON('data/months.json');
+  const ms = (months.months||[]).slice().sort();
+  const sel = document.getElementById('monthSelect');
+  sel.innerHTML = ms.map(m=>`<option value="${m}">${m}</option>`).join('');
+
+  sel.value = ms.length ? ms[ms.length-1] : '';
+
+  setAgeColsVisible(true);
+
+  async function render(){
+    const month = sel.value;
+    const idx = ms.indexOf(month);
+    const prevMonth = (idx > 0) ? ms[idx - 1] : null;
+
+    const data = await loadJSON(`data/${month}.json`);
+    const prevData = prevMonth ? await loadJSON(`data/${prevMonth}.json`) : null;
+
+    document.getElementById('monthLabel').textContent = prevMonth ? `${month}（前月：${prevMonth}）` : month;
+
+    const prevMap = new Map();
+    if(prevData && prevData.facilities){
+      for(const pf of prevData.facilities){
+        prevMap.set(String(pf.id), pf);
+      }
+    }
+
+    const totWait = (data.facilities||[]).reduce((s,f)=>s+Number(f.totals?.wait||0),0);
+    const totAcc  = (data.facilities||[]).reduce((s,f)=>s+Number(f.totals?.accept||0),0);
+
+    const prevTotWait = prevData ? (prevData.facilities||[]).reduce((s,f)=>s+Number(f.totals?.wait||0),0) : null;
+    const prevTotAcc  = prevData ? (prevData.facilities||[]).reduce((s,f)=>s+Number(f.totals?.accept||0),0) : null;
+
+    const dTotWait = (prevTotWait==null) ? null : (totWait - prevTotWait);
+    const dTotAcc  = (prevTotAcc==null) ? null : (totAcc - prevTotAcc);
+
+    const sign = (n)=> {
+      if(n==null) return `<span class="delta none">—</span>`;
+      if(n>0) return `<span class="delta plus">+${n}</span>`;
+      if(n<0) return `<span class="delta minus">${n}</span>`;
+      return `<span class="delta zero">0</span>`;
+    };
+
+    document.getElementById('countLabel').textContent = (data.facilities||[]).length.toLocaleString('ja-JP');
+    document.getElementById('kpi').innerHTML = `
+      <div class="pill">合計 入所待ち：${fmt(totWait)}（前月比 ${sign(dTotWait)}）</div>
+      <div class="pill">合計 受入可能：${fmt(totAcc)}（前月比 ${sign(dTotAcc)}）</div>
+      <div class="pill">データ区：港北区</div>
+    `;
+
+    const qRaw = document.getElementById('q').value.trim();
+    const qNorm = normalizeForSearch(qRaw);
+    const sort = document.getElementById('sort').value;
+
+    let arr = data.facilities||[];
+    if(qRaw){
+      arr = arr.filter(f => queryMatchFacility(qRaw, qNorm, f));
+    }
+
+    arr = sortFacilities(arr, sort);
+
+    const tbody = document.querySelector('#tbl tbody');
+    tbody.innerHTML = arr.map(f => rowHTML(f, prevMap.get(String(f.id)))).join('');
+    setAgeColsVisible(showAgeCols);
+  }
+
+  sel.addEventListener('change', render);
+  document.getElementById('q').addEventListener('input', render);
+  document.getElementById('sort').addEventListener('change', render);
+  document.getElementById('toggleCols').addEventListener('click', ()=>{
+    setAgeColsVisible(!showAgeCols);
+  });
+
+  await render();
+}
+
+main().catch(err=>{
+  alert(err.message);
+  console.error(err);
+});
+</script>
+</body>
+</html>
