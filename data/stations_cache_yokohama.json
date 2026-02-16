@@ -1,0 +1,303 @@
+{
+  "meta": {
+    "seed_place_id": "ChIJ8dLP9g1cGGAR9TVSa_OmvLs",
+    "query": "横浜市 駅",
+    "status": "ok"
+  },
+  "stations": {
+    "日吉": {
+      "name": "日吉駅",
+      "place_id": "ChIJTZ2M4XZfGGARsPw1fbj0psQ",
+      "lat": 35.55328679999999,
+      "lng": 139.6468632
+    },
+    "浜鳥橋": {
+      "name": "浜鳥橋駅",
+      "place_id": "ChIJPX27x9ReGGARFR6lJ9lYX4E",
+      "lat": 35.509839,
+      "lng": 139.610261
+    },
+    "プラウドシティ日吉": {
+      "name": "プラウドシティ日吉駅",
+      "place_id": "ChIJWXfcnHRfGGAR7WNtL9AdT2Y",
+      "lat": 35.547363,
+      "lng": 139.645396
+    },
+    "新横浜": {
+      "name": "新横浜駅",
+      "place_id": "ChIJy0CFs9FeGGARjk-XPA9Avew",
+      "lat": 35.50821659999999,
+      "lng": 139.6170343
+    },
+    "新綱島": {
+      "name": "新綱島駅",
+      "place_id": "ChIJqf2X_xNfGGARUMOi8LmlLtE",
+      "lat": 35.5361026,
+      "lng": 139.6362922
+    },
+    "日吉本町": {
+      "name": "日吉本町駅",
+      "place_id": "ChIJ4yN2n2hfGGARziiPXV_Wt0g",
+      "lat": 35.55003600000001,
+      "lng": 139.6336133
+    },
+    "新羽町": {
+      "name": "新羽町駅",
+      "place_id": "ChIJPxkLuDRfGGARpJPlv7MESas",
+      "lat": 35.528096,
+      "lng": 139.610223
+    },
+    "又口橋": {
+      "name": "又口橋駅",
+      "place_id": "ChIJQ_NET81eGGAR_LFFZqlrmJo",
+      "lat": 35.50313,
+      "lng": 139.6100841
+    },
+    "高田": {
+      "name": "高田駅",
+      "place_id": "ChIJC_7C-1lfGGARcNFEoNrB9Ss",
+      "lat": 35.549639,
+      "lng": 139.620117
+    },
+    "綱島": {
+      "name": "綱島駅",
+      "place_id": "ChIJsw2trhZfGGARo-IDjn5DUdk",
+      "lat": 35.53649,
+      "lng": 139.634655
+    },
+    "小机": {
+      "name": "小机駅",
+      "place_id": "ChIJfbBfBChZGGARtCaT4BZD4og",
+      "lat": 35.5085857,
+      "lng": 139.5998778
+    },
+    "大倉山駅前": {
+      "name": "大倉山駅前駅",
+      "place_id": "ChIJn0OiAiBfGGARWVul4wrP_O8",
+      "lat": 35.521592,
+      "lng": 139.629881
+    },
+    "菊名地区センター前": {
+      "name": "菊名地区センター前駅",
+      "place_id": "ChIJ9f1qsOdeGGARkKoiU5mw8Ck",
+      "lat": 35.5144031,
+      "lng": 139.6318686
+    },
+    "菊名": {
+      "name": "菊名駅",
+      "place_id": "ChIJlbf1tuleGGARBcTzriQ_1RI",
+      "lat": 35.5099195,
+      "lng": 139.6313685
+    },
+    "妙蓮寺": {
+      "name": "妙蓮寺駅",
+      "place_id": "ChIJRettkpZeGGARZf5jBmQ2Ab0",
+      "lat": 35.4984086,
+      "lng": 139.6331408
+    },
+    "新羽": {
+      "name": "新羽駅",
+      "place_id": "ChIJhakHhDRfGGARgpB43EcDPnU",
+      "lat": 35.527852,
+      "lng": 139.611712
+    },
+    "仲手原アパート前": {
+      "name": "仲手原アパート前駅",
+      "place_id": "ChIJ53LxLppeGGARYhRZo96NE0w",
+      "lat": 35.4940638,
+      "lng": 139.6356976
+    },
+    "横浜アリーナ前": {
+      "name": "横浜アリーナ前駅",
+      "place_id": "ChIJfxDTbNpeGGARXWdEO7Ri7do",
+      "lat": 35.511577,
+      "lng": 139.620533
+    },
+    "港北車庫前": {
+      "name": "港北車庫前駅",
+      "place_id": "ChIJXb_MWNleGGARlv_3l1qHSog",
+      "lat": 35.5141697,
+      "lng": 139.6238728
+    },
+    "港北区総合庁舎前": {
+      "name": "港北区総合庁舎前駅",
+      "place_id": "ChIJhVIMN-FeGGARGHHZ8qCJy0o",
+      "lat": 35.518454,
+      "lng": 139.633544
+    },
+    "太尾新道": {
+      "name": "太尾新道駅",
+      "place_id": "ChIJ-w9AjtleGGAR_DL5KNZKOxA",
+      "lat": 35.5135745,
+      "lng": 139.6213847
+    },
+    "武相台": {
+      "name": "武相台駅",
+      "place_id": "ChIJAQPg37heGGARPrY1G0ZGVrU",
+      "lat": 35.497928,
+      "lng": 139.623534
+    },
+    "新菊名橋": {
+      "name": "新菊名橋駅",
+      "place_id": "ChIJJW3let5eGGARkdAwo78hOP0",
+      "lat": 35.516155,
+      "lng": 139.627871
+    },
+    "日吉駅東口": {
+      "name": "日吉駅東口駅",
+      "place_id": "ChIJlbgfoHdfGGARiqBLXTN_yWU",
+      "lat": 35.554708,
+      "lng": 139.647833
+    },
+    "大曽根町": {
+      "name": "大曽根町駅",
+      "place_id": "ChIJhwY12h5fGGAR0Cyp7CwaREw",
+      "lat": 35.526161,
+      "lng": 139.632848
+    },
+    "樽町中央": {
+      "name": "樽町中央駅",
+      "place_id": "ChIJzUUqIBtfGGARKrJ0B0cHYZ0",
+      "lat": 35.531445,
+      "lng": 139.63884
+    },
+    "観音前": {
+      "name": "観音前駅",
+      "place_id": "ChIJv0BA_SNfGGAR1ceGyetvJmU",
+      "lat": 35.5239311,
+      "lng": 139.6253711
+    },
+    "下町会館前": {
+      "name": "下町会館前駅",
+      "place_id": "ChIJRxBbQzpfGGARM_RqUdrPouw",
+      "lat": 35.52972699999999,
+      "lng": 139.6212697
+    },
+    "港北土木事務所前": {
+      "name": "港北土木事務所前駅",
+      "place_id": "ChIJDWYZ_SVfGGARsuQY2wTRw4E",
+      "lat": 35.521925,
+      "lng": 139.620249
+    },
+    "菊名駅前": {
+      "name": "菊名駅前駅",
+      "place_id": "ChIJbXnjZeheGGARS8X541_u6NA",
+      "lat": 35.51185,
+      "lng": 139.631869
+    },
+    "宮前西町": {
+      "name": "宮前西町駅",
+      "place_id": "ChIJldHOwApfGGARrgKdRAquBq4",
+      "lat": 35.546231,
+      "lng": 139.648934
+    },
+    "日吉五丁目": {
+      "name": "日吉五丁目駅",
+      "place_id": "ChIJmTcsWKBfGGAR4QTPal9h26o",
+      "lat": 35.546261,
+      "lng": 139.652196
+    },
+    "大綱橋": {
+      "name": "大綱橋駅",
+      "place_id": "ChIJxTEWVhdfGGARIj1_Vlj4QgA",
+      "lat": 35.53222,
+      "lng": 139.634612
+    },
+    "表谷戸": {
+      "name": "表谷戸駅",
+      "place_id": "ChIJ90H0t_1eGGARLToCp7odgxw",
+      "lat": 35.52497,
+      "lng": 139.643868
+    },
+    "大豆戸交差点": {
+      "name": "大豆戸交差点駅",
+      "place_id": "ChIJYdl10-BeGGAR2Y5HmK3ztYo",
+      "lat": 35.51751099999999,
+      "lng": 139.632078
+    },
+    "一本橋": {
+      "name": "一本橋駅",
+      "place_id": "ChIJ-QgsFaFfGGARxzdJ8nJEU74",
+      "lat": 35.545881,
+      "lng": 139.65412
+    },
+    "樽町": {
+      "name": "樽町駅",
+      "place_id": "ChIJw_VoogNfGGARKXKV-akEzbo",
+      "lat": 35.529777,
+      "lng": 139.643091
+    },
+    "岸根谷戸": {
+      "name": "岸根谷戸駅",
+      "place_id": "ChIJe4YRocteGGARkMsWDeo4zx0",
+      "lat": 35.498889,
+      "lng": 139.612279
+    },
+    "南谷戸": {
+      "name": "南谷戸駅",
+      "place_id": "ChIJo2hypuNeGGARPGZ59iSlWGM",
+      "lat": 35.52110200000001,
+      "lng": 139.637275
+    },
+    "越路": {
+      "name": "越路駅",
+      "place_id": "ChIJH_0ClaJfGGARIk4luBF7zS8",
+      "lat": 35.550151,
+      "lng": 139.6590838
+    },
+    "太尾神社前": {
+      "name": "太尾神社前駅",
+      "place_id": "ChIJFwmHjCRfGGARmI-BxPTdzVI",
+      "lat": 35.525797,
+      "lng": 139.623686
+    },
+    "菊名老人センター前": {
+      "name": "菊名老人センター前駅",
+      "place_id": "ChIJYYhmyJJeGGARAYr5EKNpc0o",
+      "lat": 35.505734,
+      "lng": 139.638703
+    },
+    "箕輪町": {
+      "name": "箕輪町駅",
+      "place_id": "ChIJQ-MYeHRfGGARHAu2MIGSD4Y",
+      "lat": 35.5486391,
+      "lng": 139.6453347
+    },
+    "富士塚": {
+      "name": "富士塚駅",
+      "place_id": "ChIJN7oWWOteGGARwLpECMJ_N1k",
+      "lat": 35.505367,
+      "lng": 139.634945
+    },
+    "大倉山": {
+      "name": "大倉山駅",
+      "place_id": "ChIJz7b19R9fGGARmFTcl6ksAl0",
+      "lat": 35.52183610000001,
+      "lng": 139.6298577
+    },
+    "北新横浜": {
+      "name": "北新横浜駅",
+      "place_id": "ChIJb51QcCxfGGARo6YIOpdTF6U",
+      "lat": 35.5192972,
+      "lng": 139.6128013
+    },
+    "ホテル前": {
+      "name": "ホテル前駅",
+      "place_id": "ChIJiaqpidBeGGARV_mPxEtv0-Q",
+      "lat": 35.509906,
+      "lng": 139.618883
+    },
+    "大竹": {
+      "name": "大竹駅",
+      "place_id": "ChIJiSgXVslYGGARA3uSAly7i_Y",
+      "lat": 35.5248663,
+      "lng": 139.6042222
+    },
+    "篠原池": {
+      "name": "篠原池駅",
+      "place_id": "ChIJGQYfurdeGGAR4dp8_S_g9f4",
+      "lat": 35.49643199999999,
+      "lng": 139.617869
+    }
+  }
+}
