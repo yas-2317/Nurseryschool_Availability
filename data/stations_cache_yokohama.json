@@ -13,75 +13,14 @@
       ]
     },
     {
-      "place_id": "ChIJlbf1tuleGGARBcTzriQ_1RI",
-      "name": "菊名駅",
-      "lat": 35.5099195,
-      "lng": 139.6313685,
-      "types": [
-        "establishment",
-        "point_of_interest",
-        "train_station",
-        "transit_station"
-      ]
-    },
-    {
-      "place_id": "ChIJh1GAk4FeGGARPcAy6NnI8xk",
-      "name": "大口駅",
-      "lat": 35.4921609,
-      "lng": 139.6461469,
-      "types": [
-        "establishment",
-        "point_of_interest",
-        "train_station",
-        "transit_station"
-      ]
-    },
-    {
-      "place_id": "ChIJQ5s4LtBeGGARO6a2_2EWuNo",
-      "name": "新横浜駅",
-      "lat": 35.5076585,
-      "lng": 139.6175553,
+      "place_id": "ChIJwW_X-1lfGGARX134KuEt62k",
+      "name": "高田駅",
+      "lat": 35.5496391,
+      "lng": 139.620117,
       "types": [
         "establishment",
         "point_of_interest",
         "subway_station",
-        "train_station",
-        "transit_station"
-      ]
-    },
-    {
-      "place_id": "ChIJz7b19R9fGGARmFTcl6ksAl0",
-      "name": "大倉山駅",
-      "lat": 35.5218361,
-      "lng": 139.6298577,
-      "types": [
-        "establishment",
-        "point_of_interest",
-        "train_station",
-        "transit_station"
-      ]
-    },
-    {
-      "place_id": "ChIJ4yN2n2hfGGARziiPXV_Wt0g",
-      "name": "日吉本町駅",
-      "lat": 35.550036,
-      "lng": 139.6336133,
-      "types": [
-        "establishment",
-        "point_of_interest",
-        "subway_station",
-        "transit_station"
-      ]
-    },
-    {
-      "place_id": "ChIJGd-3wUNfGGARdEwjDVpKVz4",
-      "name": "綱島駅",
-      "lat": 35.5366941,
-      "lng": 139.6346323,
-      "types": [
-        "establishment",
-        "point_of_interest",
-        "train_station",
         "transit_station"
       ]
     },
@@ -99,10 +38,10 @@
       ]
     },
     {
-      "place_id": "ChIJwW_X-1lfGGARX134KuEt62k",
-      "name": "高田駅",
-      "lat": 35.5496391,
-      "lng": 139.620117,
+      "place_id": "ChIJ4yN2n2hfGGARziiPXV_Wt0g",
+      "name": "日吉本町駅",
+      "lat": 35.550036,
+      "lng": 139.6336133,
       "types": [
         "establishment",
         "point_of_interest",
@@ -111,26 +50,15 @@
       ]
     },
     {
-      "place_id": "ChIJX0B0fzNfGGARrEkcvCqx7tI",
-      "name": "新羽駅",
-      "lat": 35.5274747,
-      "lng": 139.6121185,
+      "place_id": "ChIJQ5s4LtBeGGARO6a2_2EWuNo",
+      "name": "新横浜駅",
+      "lat": 35.5076585,
+      "lng": 139.6175553,
       "types": [
         "establishment",
         "point_of_interest",
         "subway_station",
-        "transit_station"
-      ]
-    },
-    {
-      "place_id": "ChIJb51QcCxfGGARo6YIOpdTF6U",
-      "name": "北新横浜駅",
-      "lat": 35.5192972,
-      "lng": 139.6128013,
-      "types": [
-        "establishment",
-        "point_of_interest",
-        "subway_station",
+        "train_station",
         "transit_station"
       ]
     }
