@@ -90,7 +90,7 @@ def read_csv_from_url(url: str) -> List[Dict[str, str]]:
 
     def sanitize_header(header: List[str]) -> List[str]:
         out = []
-        seen: Dict[str, int] = {}
+        seen = {}
         for i, h in enumerate(header):
             h2 = (h or "").strip()
             if h2 == "":
@@ -142,7 +142,6 @@ def scrape_csv_urls() -> Dict[str, str]:
 
     best: Dict[str, str] = {}
 
-    # 既知ID（ある場合は最優先）
     for url in links:
         if "0926_" in url:
             best["accept"] = url
@@ -151,7 +150,6 @@ def scrape_csv_urls() -> Dict[str, str]:
         elif "0923_" in url:
             best["enrolled"] = url
 
-    # キーワード推定（保険）
     if "accept" not in best:
         for url in links:
             if ("受入" in url) or ("入所可能" in url):
@@ -177,7 +175,7 @@ def scrape_csv_urls() -> Dict[str, str]:
 
 def load_master() -> Dict[str, Dict[str, str]]:
     """
-    data/master_facilities.csv があれば参照して住所/地図URL/最寄駅/徒歩などを補完
+    data/master_facilities.csv があれば参照して住所/緯度経度/地図URL/最寄り駅などを補完
     """
     if not MASTER_CSV.exists():
         return {}
@@ -346,14 +344,20 @@ def main() -> None:
         name = str(ar.get(name_key, "")).strip() if name_key else ""
 
         m = master.get(fid, {})
+
+        # master優先の補完
         address = (m.get("address") or "").strip()
         lat = (m.get("lat") or "").strip()
         lng = (m.get("lng") or "").strip()
         map_url = (m.get("map_url") or "").strip() or build_map_url(name, ward, address, lat, lng)
 
-        # ★追加：最寄駅・徒歩（master_facilities.csv 側の列名に合わせて取得）
-        nearest_station = (m.get("nearest_station") or m.get("station") or m.get("最寄り駅") or "").strip()
-        walk_minutes = (m.get("walk_minutes") or m.get("徒歩") or m.get("徒歩分") or "").strip()
+        # ★ 追加：最寄り駅・徒歩・その他（将来拡張用）
+        nearest_station = (m.get("nearest_station") or "").strip()
+        walk_minutes = (m.get("walk_minutes") or "").strip()
+        facility_type = (m.get("facility_type") or "").strip()
+        phone = (m.get("phone") or "").strip()
+        website = (m.get("website") or "").strip()
+        notes = (m.get("notes") or "").strip()
 
         tot_accept = get_total(ar)
         tot_wait = get_total(wr) if wr else None
@@ -405,9 +409,20 @@ def main() -> None:
                 "name": name,
                 "ward": ward,
                 "address": address,
+                "lat": lat,
+                "lng": lng,
                 "map_url": map_url,
+
+                # ★ 追加（一覧4列表示用）
                 "nearest_station": nearest_station,
-                "walk_minutes": walk_minutes,
+                "walk_minutes": (int(walk_minutes) if walk_minutes.isdigit() else walk_minutes),
+
+                # ★ 追加（将来：園詳細などで使える）
+                "facility_type": facility_type,
+                "phone": phone,
+                "website": website,
+                "notes": notes,
+
                 "updated": month,
                 "totals": {
                     "accept": tot_accept,
@@ -425,6 +440,7 @@ def main() -> None:
     if len(facilities) == 0:
         raise RuntimeError("facilitiesが0件です（区フィルタ/列名不一致の可能性）")
 
+    # 先に月次JSONを書いてから months.json を更新（404事故防止）
     month_path = DATA_DIR / f"{month}.json"
     month_path.write_text(
         json.dumps({"month": month, "ward": (WARD_FILTER or "横浜市"), "facilities": facilities}, ensure_ascii=False, indent=2),
