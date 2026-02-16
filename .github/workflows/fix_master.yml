@@ -88,6 +88,16 @@ jobs:
           fi
           ls -la data || true
 
+      - name: Expand master from existing month JSONs (Yokohama-wide)
+        env:
+          WARD_FILTER: ${{ inputs.ward_filter }}   # 空なら全域、港北区なら港北区だけ
+        run: |
+          set -euxo pipefail
+          test -f scripts/expand_master_from_months.py
+          python -u scripts/expand_master_from_months.py
+          echo "---- master head ----"
+          head -n 5 data/master_facilities.csv
+
       # 1) master_facilities.csv を Google で更新（ここだけ ward_filter を使う）
       - name: Fix master_facilities.csv (Google)
         env:
