@@ -82,14 +82,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
+     
       - name: Install deps
-        shell: bash
         run: |
-          set -euxo pipefail
           python -m pip install --upgrade pip
-          # update_from_yokohama.py / fix_master_with_google_places.py で使う依存
-          pip install requests beautifulsoup4 pykakasi
+          pip install requests beautifulsoup4 pykakasi openpyxl
+
 
       - name: Ensure scripts exist
         shell: bash
@@ -152,12 +150,12 @@ jobs:
 
       - name: Apply master to ALL month JSONs (so site shows address/station)
         env:
-          APPLY_MASTER_OVERWRITE: "0"   # 0=空欄だけ埋める / 1=masterで上書き
+          APPLY_MASTER_OVERWRITE: "0"
         run: |
           set -euxo pipefail
           test -f scripts/apply_master_to_month_jsons.py
           python -u scripts/apply_master_to_month_jsons.py
-          ls -la data || true
+
 
       - name: Rebuild latest month JSON (apply master to site data)
         shell: bash
