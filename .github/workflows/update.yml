@@ -1,21 +1,22 @@
-name: Monthly Update
+name: Monthly update
+
 on:
   workflow_dispatch:
     inputs:
       ward_filter:
-        description: "対象区（例：港北区）。空欄なら全件"
+        description: "対象区（例：港北区）。空欄なら全件（横浜市全域）"
         required: false
-        default: "港北区"
+        default: ""
   schedule:
-    # 毎月4日 0:00 JST
-    - cron: "00 15 3 * *"
+    # 毎週 月曜 02:20 JST = 日曜 17:20 UTC
+    - cron: "20 17 * * 0"
 
 permissions:
   contents: write
 
 concurrency:
-  group: monthly-update
-  cancel-in-progress: false
+  group: update-monthly
+  cancel-in-progress: true
 
 jobs:
   update:
@@ -26,7 +27,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Sync with remote (rebase)
+      - name: Sync with remote
         run: |
           set -euxo pipefail
           git config user.name "github-actions[bot]"
@@ -45,12 +46,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 pykakasi
 
-      - name: Ensure scripts exist
-        run: |
-          set -euxo pipefail
-          test -f scripts/update_from_yokohama.py
-          test -f scripts/apply_master_to_all_months.py
-
       - name: Update latest month JSON
         env:
           WARD_FILTER: ${{ inputs.ward_filter }}
@@ -59,23 +54,24 @@ jobs:
           python -u scripts/update_from_yokohama.py
           ls -la data || true
 
-      - name: Apply master (incl kana) to ALL month JSON
+      - name: Apply master to latest + existing months (safe)
+        env:
+          WARD_FILTER: ${{ inputs.ward_filter }}
         run: |
           set -euxo pipefail
-          python -u scripts/apply_master_to_all_months.py
+          if [ -f scripts/apply_master_to_months.py ]; then
+            python -u scripts/apply_master_to_months.py
+          fi
 
       - name: Commit & push
         run: |
           set -euxo pipefail
-
           if [ -z "$(git status --porcelain)" ]; then
             echo "No changes."
             exit 0
           fi
-
-          git add data/*.json data/months.json data/master_facilities.csv || true
-          git commit -m "Update nursery data + apply master to all months" || true
-
+          git add data || true
+          git commit -m "Monthly update data" || true
           git fetch origin main
           git rebase origin/main
           git push origin main
