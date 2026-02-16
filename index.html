@@ -79,7 +79,17 @@ function setAgeColsVisible(v){
   });
   document.getElementById('toggleCols').textContent = v ? '年齢別列：非表示' : '年齢別列：表示';
 }
-
+function toHira(s){
+  // カタカナ→ひらがな
+  return (s||"").replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+}
+function toKata(s){
+  // ひらがな→カタカナ
+  return (s||"").replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+}
+function normSearch(s){
+  return safeStr(s).trim().toLowerCase();
+}
 function getGroups(f){
   if(f.age_groups) return f.age_groups;
 
@@ -238,12 +248,28 @@ async function main(){
     const q = document.getElementById('q').value.trim();
     const sort = document.getElementById('sort').value;
 
-    let arr = data.facilities||[];
-
+    let arr = data.facilities || [];
     if(q){
-      const nq = normalizeForSearch(q);
-      arr = arr.filter(f => buildHaystack(f).includes(nq));
+      const q0 = normSearch(q);
+      const qH = normSearch(toHira(q0));
+      const qK = normSearch(toKata(q0));
+    
+      arr = arr.filter(f => {
+        const name = normSearch(f.name);
+        const nk   = normSearch(f.name_kana);
+        const st   = normSearch(f.nearest_station);
+        const sk   = normSearch(f.station_kana);
+    
+        // ひらがな入力でも、kana側（ひら/カタどっちでも）に当たる
+        return (
+          name.includes(q0) ||
+          nk.includes(qH) || nk.includes(qK) ||
+          st.includes(q0) ||
+          sk.includes(qH) || sk.includes(qK)
+        );
+      });
     }
+    
 
     arr = sortFacilities(arr, sort);
 
