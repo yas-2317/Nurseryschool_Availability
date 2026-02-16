@@ -81,12 +81,14 @@ jobs:
           WIPE: ${{ inputs.wipe_station_cache }}
         run: |
           set -euxo pipefail
+          mkdir -p data
           if [ "$WIPE" = "1" ]; then
             rm -f data/stations_cache_yokohama.json
             rm -f data/station_misses.csv
           fi
           ls -la data || true
 
+      # 1) master_facilities.csv を Google で更新（ここだけ ward_filter を使う）
       - name: Fix master_facilities.csv (Google)
         env:
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
@@ -111,18 +113,20 @@ jobs:
           python -u scripts/fix_master_with_google_places.py
           ls -la data || true
 
-      - name: Apply master to ALL month JSONs (so HP shows address/station everywhere)
+      # 2) 全月JSONへ master を注入：HPで全区の駅/徒歩が出るように “常に全域”
+      - name: Apply master to ALL month JSONs (always all wards)
         env:
-          WARD_FILTER: ${{ inputs.ward_filter }}
+          WARD_FILTER: ""
         run: |
           set -euxo pipefail
           test -f scripts/apply_master_to_all_months.py
           python -u scripts/apply_master_to_all_months.py
           ls -la data || true
 
-      - name: Rebuild latest month JSON (refresh latest month from city dataset)
+      # 3) 最新月JSONの作り直し：これも “常に全域”
+      - name: Rebuild latest month JSON (always all wards)
         env:
-          WARD_FILTER: ${{ inputs.ward_filter }}
+          WARD_FILTER: ""
         run: |
           set -euxo pipefail
           test -f scripts/update_from_yokohama.py
@@ -139,7 +143,6 @@ jobs:
           fi
 
           git add data || true
-          git add scripts/apply_master_to_all_months.py || true
           git commit -m "Fix master + apply to all months + rebuild latest" || true
 
           git fetch origin main
