@@ -35,7 +35,6 @@ OVERWRITE_PHONE = (os.getenv("OVERWRITE_PHONE", "0") == "1")
 OVERWRITE_WEBSITE = (os.getenv("OVERWRITE_WEBSITE", "0") == "1")
 OVERWRITE_MAP_URL = (os.getenv("OVERWRITE_MAP_URL", "0") == "1")
 
-# 駅の上書き方針
 OVERWRITE_NEAREST_STATION = (os.getenv("OVERWRITE_NEAREST_STATION", "1") == "1")
 OVERWRITE_WALK_MINUTES = (os.getenv("OVERWRITE_WALK_MINUTES", "1") == "1")
 FILL_NEAREST_STATION = (os.getenv("FILL_NEAREST_STATION", "1") == "1")
@@ -43,7 +42,7 @@ FILL_NEAREST_STATION = (os.getenv("FILL_NEAREST_STATION", "1") == "1")
 NEARBY_RADIUS_M = int(os.getenv("NEARBY_RADIUS_M", "2500"))
 FORCE_REBUILD_STATIONS = (os.getenv("FORCE_REBUILD_STATIONS", "0") == "1")
 
-# ★重要：既存の “駅ではない値” を必ず空にして再取得
+# ★既存の「駅じゃない値」を必ず空に戻して再取得
 SANITIZE_BAD_EXISTING_STATION = (os.getenv("SANITIZE_BAD_EXISTING_STATION", "1") == "1")
 
 STATION_CACHE = DATA_DIR / "stations_cache_yokohama.json"
@@ -51,12 +50,10 @@ STATION_MISSES = DATA_DIR / "station_misses.csv"
 
 # 駅として許可する types（厳格）
 ALLOWED_STATION_TYPES = {"train_station", "subway_station", "light_rail_station"}
-
-# 明確に弾く types
 DISALLOWED_STATION_TYPES = {"bus_station", "bus_stop", "bus"}
 
-# 「駅ではない」語（保存値のチェックにも使う）
-BAD_STATION_WORDS = [
+# “駅じゃない”混入を強く弾く語
+BAD_WORDS = [
     "バス", "バス停", "交差点", "公園", "小学校", "中学校", "高校", "病院", "クリニック",
     "消防", "警察", "区役所", "市役所", "郵便局", "図書館", "体育館", "保育園", "幼稚園",
     "こども園", "店", "スーパー", "コンビニ", "薬局", "営業所", "本社", "支店", "工場",
@@ -64,24 +61,25 @@ BAD_STATION_WORDS = [
     "二丁目", "三丁目", "四丁目", "五丁目", "丁目",
     "番地", "番", "号",
     "プラウド", "シティ", "レジデンス", "マンション", "団地", "ハイツ", "コーポ",
-    "SST", "脇", "前", "通り", "新道", "坂", "堀", "中央", "ホテル",
+    "SST", "脇", "通り", "新道", "坂", "堀", "中央", "ホテル",
+    "前",  # “〜前” は駅名として保存しない
 ]
 
-# 「駅っぽく見えるけど駅名ではない」接尾辞（例：日吉駅東口）
-BAD_STATION_SUFFIX_PAT = re.compile(r"(東口|西口|南口|北口|出口|改札|改札口|駅前|駅東口|駅西口|駅南口|駅北口)$")
+# “駅”が含まれても駅名ではない末尾（例：日吉駅東口）
+BAD_ST_SUFFIX = re.compile(r"(東口|西口|南口|北口|出口|改札|改札口|駅前|駅通り|駅入口|駅東口|駅西口|駅南口|駅北口)$")
 
 
-# ---------------- small utils ----------------
+# ---------- utils ----------
 def safe(x: Any) -> str:
     return "" if x is None else str(x)
 
-def norm_spaces(s: str) -> str:
+def norm_spaces(s: Any) -> str:
     s = safe(s).replace("　", " ")
     s = re.sub(r"\s+", " ", s).strip()
     return s
 
 def in_scope_address(addr: str, city: str, ward: Optional[str]) -> bool:
-    a = safe(addr)
+    a = safe(addr).strip()
     if not a:
         return False
     if STRICT_ADDRESS_CHECK:
@@ -110,97 +108,78 @@ def haversine_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     return R * c
 
 
-# ---------------- station name rules ----------------
-def normalize_station_name(name: str) -> str:
+# ---------- station name rules ----------
+def normalize_station_name(raw: str) -> str:
     """
-    保存する駅名は “〇〇駅” に統一する。
-    - “日吉駅東口” → “日吉駅”
-    - “新横浜駅（JR）” → “新横浜駅” (最初の “〇〇駅” を抽出)
+    保存する駅名は “〇〇駅” に統一（余計な情報は削る）
     """
-    s = safe(name).strip()
+    s = safe(raw).strip()
     if not s:
         return ""
-
-    # 最初に現れる “〇〇駅” を切り出す（余計な後ろを捨てる）
     m = re.search(r"(.+?駅)", s)
     if m:
         return m.group(1).strip()
-
-    # “駅” が無いなら不採用（保存しない）
     return ""
 
-def looks_like_station_name_strict(name: str) -> bool:
+def is_clean_station_value(st: str) -> bool:
     """
-    ★保存値としてOKか（超厳格）
-    - 必ず “〇〇駅” で終わる
-    - “東口/西口/…/駅前” 等は弾く
-    - NGワードを含むものは弾く
+    master保存値としてOKか（厳格）
+    - “〇〇駅” で終わる
+    - “東口/駅前/改札…”等が付いていない
+    - bad word を含まない
     """
-    n = normalize_station_name(name)
-    if not n:
-        return False
-    if not n.endswith("駅"):
+    raw = safe(st).strip()
+    if not raw:
         return False
 
-    # “駅” 以降の情報が付いてる（元文字列）ケースを弾くために suffix もチェック
-    raw = safe(name).strip()
-    if BAD_STATION_SUFFIX_PAT.search(raw):
+    # “駅” を含むが末尾が駅じゃないものは全部NG
+    if "駅" in raw and (not raw.endswith("駅")):
         return False
-    if ("駅" in raw) and (not raw.endswith("駅")):
-        # 例：日吉駅東口 / 日吉駅前 / 新横浜駅通り
+    if BAD_ST_SUFFIX.search(raw):
         return False
 
-    # 住所っぽさ排除
-    if re.search(r"\d+丁目", n) or re.search(r"\d+番", n) or re.search(r"\d+号", n):
-        return False
-    if "丁目" in n or "番地" in n:
+    n = normalize_station_name(raw)
+    if not n or not n.endswith("駅"):
         return False
 
-    for w in BAD_STATION_WORDS:
-        if w in n or w in raw:
+    for w in BAD_WORDS:
+        if w in raw or w in n:
             return False
+
+    # 住所っぽいもの除外
+    if re.search(r"\d+丁目", raw) or re.search(r"\d+番", raw) or re.search(r"\d+号", raw):
+        return False
+    if "丁目" in raw or "番地" in raw:
+        return False
 
     return True
 
 def bad_station_value(st: str) -> bool:
-    """
-    master に入っている値が “駅名として不正” なら True
-    → True の場合は空に戻して再取得する
-    """
     s = safe(st).strip()
     if s == "" or s.lower() == "null" or s == "-":
         return True
+    return not is_clean_station_value(s)
 
-    # “〇〇駅” だけを許容（東口/駅前等が付いてたら bad）
-    if not looks_like_station_name_strict(s):
-        return True
-
-    return False
-
-def sanitize_existing_station_fields(row: Dict[str, str]) -> int:
+def sanitize_existing_station(row: Dict[str, str]) -> int:
     """
-    既存の nearest_station が駅じゃないなら空に戻して再取得
+    既存値が駅じゃないなら空に戻して再取得
     """
     if not SANITIZE_BAD_EXISTING_STATION:
         return 0
-    st = safe(row.get("nearest_station")).strip()
-    wk = safe(row.get("walk_minutes")).strip()
     changed = 0
-
+    st = safe(row.get("nearest_station")).strip()
     if st and bad_station_value(st):
         row["nearest_station"] = ""
         row["station_kana"] = ""
         changed += 1
-
-    # 駅が空なら徒歩も空に（整合性）
+    wk = safe(row.get("walk_minutes")).strip()
     if (not safe(row.get("nearest_station")).strip()) and wk:
         row["walk_minutes"] = ""
         changed += 1
-
     return changed
 
 
-# ---------------- Google APIs ----------------
+# ---------- Google API ----------
 def g_get(url: str, params: Dict[str, Any]) -> Dict[str, Any]:
     time.sleep(SLEEP_SEC)
     r = requests.get(url, params=params, timeout=30)
@@ -227,7 +206,7 @@ def nearby_search(lat: float, lng: float, radius_m: int, place_type: str) -> Lis
     js = g_get(url, {
         "location": f"{lat},{lng}",
         "radius": radius_m,
-        "type": place_type,   # ★train/subway/light_rail のみ使う
+        "type": place_type,
         "keyword": "駅",
         "key": API_KEY,
         "language": "ja",
@@ -237,9 +216,6 @@ def nearby_search(lat: float, lng: float, radius_m: int, place_type: str) -> Lis
     return js.get("results") or []
 
 def text_search_station_near(lat: float, lng: float, radius_m: int) -> List[Dict[str, Any]]:
-    """
-    fallback。混ざるので、details で確定する前提。
-    """
     url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
     js = g_get(url, {
         "query": "駅",
@@ -254,34 +230,34 @@ def text_search_station_near(lat: float, lng: float, radius_m: int) -> List[Dict
     return js.get("results") or []
 
 
-# ---------------- station validation ----------------
-def is_station_by_types(types: List[str]) -> bool:
+# ---------- station validation ----------
+def is_station_types(types: List[str]) -> bool:
     tset = set(types or [])
     if tset & DISALLOWED_STATION_TYPES:
         return False
     return bool(tset & ALLOWED_STATION_TYPES)
 
-def validate_station_with_details(place: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def validate_station_with_details(candidate: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """
-    ★最重要：place details の types で駅だけに確定
+    ★必ず details を引いて types で駅確定
     """
-    pid = safe(place.get("place_id")).strip()
+    pid = safe(candidate.get("place_id")).strip()
     if not pid:
         return None
     det = place_details(pid)
     if not det:
         return None
 
-    # details の name を “〇〇駅” に正規化
-    name = normalize_station_name(safe(det.get("name")))
-    if not looks_like_station_name_strict(name):
-        return None
-
     types = det.get("types") or []
-    if not is_station_by_types(types):
+    if not is_station_types(types):
         return None
 
-    out = dict(place)
+    name = normalize_station_name(det.get("name"))
+    if not is_clean_station_value(name):
+        return None
+
+    out = dict(candidate)
+    out["place_id"] = pid
     out["name"] = name
     out["types"] = types
     if det.get("geometry"):
@@ -289,55 +265,23 @@ def validate_station_with_details(place: Dict[str, Any]) -> Optional[Dict[str, A
     return out
 
 
-# ---------------- station cache ----------------
-def load_station_cache() -> Dict[str, Any]:
-    if FORCE_REBUILD_STATIONS and STATION_CACHE.exists():
-        STATION_CACHE.unlink()
-    if not STATION_CACHE.exists():
-        return {"stations": []}
-    try:
-        return json.loads(STATION_CACHE.read_text(encoding="utf-8"))
-    except Exception:
-        return {"stations": []}
-
-def save_station_cache(obj: Dict[str, Any]) -> None:
-    STATION_CACHE.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
-
-def upsert_station_cache(cache: Dict[str, Any], place: Dict[str, Any]) -> None:
-    pid = safe(place.get("place_id")).strip()
-    if not pid:
-        return
-    items = cache.setdefault("stations", [])
-    if any(s.get("place_id") == pid for s in items):
-        return
-    loc = (place.get("geometry") or {}).get("location") or {}
-    items.append({
-        "place_id": pid,
-        "name": normalize_station_name(safe(place.get("name"))),
-        "lat": loc.get("lat"),
-        "lng": loc.get("lng"),
-        "types": place.get("types") or [],
-    })
-
-def nearest_station_for(lat: float, lng: float, radius_m: int, cache: Dict[str, Any]) -> Tuple[Optional[str], Optional[int], Optional[str]]:
+def nearest_station_for(lat: float, lng: float, radius_m: int) -> Tuple[Optional[str], Optional[int], Optional[str]]:
     """
     returns (station_name, walk_minutes, station_place_id)
-    徒歩は直線距離→80m/分換算（Directions無しでコスト抑制）
     """
-
-    # 1) 駅専用 type の nearby を優先（バス停混入を抑える）
     raw: List[Dict[str, Any]] = []
-    for t in ["train_station", "subway_station", "light_rail_station"]:
-        raw.extend(nearby_search(lat, lng, radius_m, place_type=t))
 
-    # 2) fallback: text search
+    # ★駅タイプごとに検索（bus混入を極小化）
+    for t in ["train_station", "subway_station", "light_rail_station"]:
+        raw.extend(nearby_search(lat, lng, radius_m, t))
+
+    # fallback: textsearch（混ざるが details で確定する）
     if not raw:
         raw = text_search_station_near(lat, lng, radius_m)
 
     if not raw:
         return None, None, None
 
-    # 3) 距離順
     def dist(p):
         loc = (p.get("geometry") or {}).get("location") or {}
         try:
@@ -347,21 +291,19 @@ def nearest_station_for(lat: float, lng: float, radius_m: int, cache: Dict[str, 
 
     raw.sort(key=dist)
 
-    # 4) 近い順に details で確定（最大8件まで試す）
-    best: Optional[Dict[str, Any]] = None
-    for p in raw[:8]:
+    # ★近い順に details で確定（12件まで試す）
+    best = None
+    for p in raw[:12]:
         v = validate_station_with_details(p)
         if v:
             best = v
             break
 
-    if best is None:
+    if not best:
         return None, None, None
 
-    name = normalize_station_name(safe(best.get("name")))
+    name = safe(best.get("name")).strip()
     pid = safe(best.get("place_id")).strip() or None
-
-    upsert_station_cache(cache, best)
 
     loc = (best.get("geometry") or {}).get("location") or {}
     try:
@@ -374,7 +316,7 @@ def nearest_station_for(lat: float, lng: float, radius_m: int, cache: Dict[str, 
     return name, walk, pid
 
 
-# ---------------- master I/O ----------------
+# ---------- master I/O ----------
 def read_master_rows() -> Tuple[List[Dict[str, str]], List[str]]:
     if not MASTER_CSV.exists():
         raise RuntimeError("data/master_facilities.csv がありません")
@@ -406,11 +348,9 @@ def main() -> None:
     rows, fields = read_master_rows()
     target_ward = WARD_FILTER.strip() if WARD_FILTER else None
 
-    cache = load_station_cache()
-
     misses: List[Dict[str, Any]] = []
-    updated_cells = 0
     updated_rows = 0
+    updated_cells = 0
 
     for row in rows:
         fid = safe(row.get("facility_id")).strip()
@@ -420,8 +360,8 @@ def main() -> None:
         if target_ward and target_ward not in ward:
             continue
 
-        # ★既存の駅が不正なら必ず空にして再取得
-        updated_cells += sanitize_existing_station_fields(row)
+        # ★既存の駅が不正なら強制クリーニング
+        updated_cells += sanitize_existing_station(row)
 
         addr0 = safe(row.get("address")).strip()
         lat0 = safe(row.get("lat")).strip()
@@ -443,7 +383,7 @@ def main() -> None:
         if updated_rows >= MAX_UPDATES:
             break
 
-        # geocode query
+        # geocode query（ランドマークでズレやすいので “保育園” を足す）
         q_parts = [name]
         if ward:
             q_parts.append(ward)
@@ -458,14 +398,13 @@ def main() -> None:
             misses.append({"facility_id": fid, "name": name, "ward": ward, "reason": "geocode_failed", "query_tried": q})
             continue
 
-        place_id = safe(geo.get("place_id"))
+        place_id = safe(geo.get("place_id")).strip()
         det = place_details(place_id) if place_id else None
         if not det:
             det = {
-                "name": name,
-                "formatted_address": (geo.get("formatted_address") if geo else ""),
-                "geometry": geo.get("geometry"),
-                "types": geo.get("types") or [],
+                "formatted_address": geo.get("formatted_address") if geo else "",
+                "geometry": geo.get("geometry") if geo else None,
+                "types": geo.get("types") if geo else [],
                 "url": "",
                 "website": "",
                 "international_phone_number": "",
@@ -500,31 +439,26 @@ def main() -> None:
         c += set_if("website", det.get("website"), OVERWRITE_WEBSITE)
         c += set_if("map_url", det.get("url"), OVERWRITE_MAP_URL)
 
-        # ★駅（駅以外は絶対採用しない）
+        # station
         if FILL_NEAREST_STATION and lat and lng:
             try:
-                st_name, walk_min, _ = nearest_station_for(float(lat), float(lng), NEARBY_RADIUS_M, cache)
-
-                if st_name and looks_like_station_name_strict(st_name):
+                st_name, walk_min, _ = nearest_station_for(float(lat), float(lng), NEARBY_RADIUS_M)
+                if st_name and is_clean_station_value(st_name):
                     if OVERWRITE_NEAREST_STATION or (st0 == "" or bad_station_value(st0)):
                         if safe(row.get("nearest_station")).strip() != st_name:
                             row["nearest_station"] = st_name
                             c += 1
-
                 if walk_min is not None:
                     if OVERWRITE_WALK_MINUTES or wk0 in ("", "null", "-"):
                         if safe(row.get("walk_minutes")).strip() != str(walk_min):
                             row["walk_minutes"] = str(walk_min)
                             c += 1
-
             except Exception as e:
                 misses.append({"facility_id": fid, "name": name, "ward": ward, "reason": f"station_failed:{e}", "query_tried": q})
 
         if c > 0:
             updated_cells += c
             updated_rows += 1
-
-    save_station_cache(cache)
 
     if misses:
         write_csv(
@@ -537,8 +471,8 @@ def main() -> None:
 
     print("DONE. wrote:", str(MASTER_CSV))
     print("updated rows:", updated_rows, "updated cells:", updated_cells)
-    print("station cache:", str(STATION_CACHE), "count:", len((cache.get("stations") or [])))
     print("misses:", len(misses), f"(see {STATION_MISSES.name})" if misses else "")
+
 
 if __name__ == "__main__":
     main()
