@@ -150,6 +150,15 @@ jobs:
             echo "no station_misses.csv"
           fi
 
+      - name: Apply master to ALL month JSONs (so site shows address/station)
+        env:
+          APPLY_MASTER_OVERWRITE: "0"   # 0=空欄だけ埋める / 1=masterで上書き
+        run: |
+          set -euxo pipefail
+          test -f scripts/apply_master_to_month_jsons.py
+          python -u scripts/apply_master_to_month_jsons.py
+          ls -la data || true
+
       - name: Rebuild latest month JSON (apply master to site data)
         shell: bash
         env:
