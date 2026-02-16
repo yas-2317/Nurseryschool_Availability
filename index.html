@@ -3,27 +3,25 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>横浜市港北区 保育園 受入可能数・入所待ち人数（年齢別）</title>
+  <title>横浜市 保育園 受入可能数・入所待ち人数（年齢別）</title>
   <link rel="stylesheet" href="styles.css"/>
-  <style>
-    /* テーブルの幅が「微妙に足りない」対策：カードのpaddingを消して横幅を確保 */
-    .tablecard{ padding:0 !important; }
-    .tablecard .tablewrap{
-      border:0 !important;
-      border-radius:18px !important;
-    }
-    /* stickyヘッダーが他要素に負けないように（CSS側でやってるなら重複でもOK） */
-    #tbl thead th{ z-index: 50; }
-  </style>
 </head>
 <body>
 <header>
   <div class="container">
-    <h1>横浜市港北区：保育園ごとの「受入可能数」「入所待ち人数」（年齢別）</h1>
+    <h1>横浜市：保育園ごとの「受入可能数」「入所待ち人数」（年齢別）</h1>
     <div class="sub">データ時点：<span id="monthLabel">-</span> / 施設数：<span id="countLabel">-</span></div>
+
     <div class="controls">
       <select id="monthSelect"></select>
+
+      <!-- NEW: ward filter -->
+      <select id="wardSelect">
+        <option value="">全区（横浜市）</option>
+      </select>
+
       <input id="q" placeholder="園名/駅で検索（例：日吉 / ひよし / しんよこはま）" />
+
       <select id="sort">
         <option value="wait0_desc">0歳 入所待ち 多い順</option>
         <option value="wait1_desc">1歳 入所待ち 多い順</option>
@@ -34,6 +32,7 @@
         <option value="station_walk_asc">駅×徒歩（昇順）</option>
         <option value="name_asc">園名（あいうえお）</option>
       </select>
+
       <button id="toggleCols">年齢別列：非表示</button>
       <span class="badge">※「入所待ち人数」は園ごとの申込件数（重複計上あり）</span>
     </div>
@@ -44,35 +43,36 @@
   <div class="card">
     <div class="kpi" id="kpi"></div>
     <div class="small">
-      </div>
+      住所・駅・徒歩・かなは <code>data/master_facilities.csv</code> を参照（name_kana / station_kana があると「ひよし→日吉」検索が可能）。
+    </div>
   </div>
 
-  <!-- ★カードのpaddingを消して幅を稼ぐ -->
-  <div class="card tablecard">
-    <div class="tablewrap">
-      <table id="tbl">
-        <thead>
-          <tr>
-            <th style="min-width:240px;">園名</th>
-            <th style="min-width:260px;">住所</th>
-            <th style="min-width:120px;">地図</th>
-            <th style="min-width:170px;">最寄り駅</th>
-            <th style="min-width:90px;">徒歩</th>
+  <div class="card tablewrap">
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th class="col-name">園名</th>
 
-            <th style="min-width:120px;">受入可能（合計）</th>
-            <th style="min-width:120px;">入所待ち（合計）</th>
-            <th style="min-width:120px;">前月比 入所待ち</th>
-            <th style="min-width:120px;">前月比 受入可能</th>
+          <th class="col-station">最寄り駅</th>
+          <th class="col-walk">徒歩</th>
 
-            <th class="agecol" style="min-width:90px;">0歳 受入</th><th class="agecol" style="min-width:90px;">0歳 待ち</th>
-            <th class="agecol" style="min-width:90px;">1歳 受入</th><th class="agecol" style="min-width:90px;">1歳 待ち</th>
-            <th class="agecol" style="min-width:90px;">2歳 受入</th><th class="agecol" style="min-width:90px;">2歳 待ち</th>
-            <th class="agecol" style="min-width:110px;">3〜5歳 受入</th><th class="agecol" style="min-width:110px;">3〜5歳 待ち</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
+          <th class="col-num">受入可能（合計）</th>
+          <th class="col-num">入所待ち（合計）</th>
+          <th class="col-delta">前月比 入所待ち</th>
+          <th class="col-delta">前月比 受入可能</th>
+
+          <th class="agecol col-age">0歳 受入</th><th class="agecol col-age">0歳 待ち</th>
+          <th class="agecol col-age">1歳 受入</th><th class="agecol col-age">1歳 待ち</th>
+          <th class="agecol col-age">2歳 受入</th><th class="agecol col-age">2歳 待ち</th>
+          <th class="agecol col-agewide">3〜5歳 受入</th><th class="agecol col-agewide">3〜5歳 待ち</th>
+
+          <!-- moved to tail -->
+          <th class="col-addr">住所</th>
+          <th class="col-map">地図</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 
   <div class="footer">
@@ -92,7 +92,6 @@ function setAgeColsVisible(v){
   document.getElementById('toggleCols').textContent = v ? '年齢別列：非表示' : '年齢別列：表示';
 }
 
-/* ひら/カタ変換（検索用） */
 function toHira(s){
   return (s||"").replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
 }
@@ -103,18 +102,8 @@ function normSearch(s){
   return safeStr(s).trim().toLowerCase();
 }
 
-/* 駅名のソートキー（station_kana優先。無ければnearest_station） */
-function pickStationKey(f){
-  const sk = safeStr(f.station_kana || "");
-  const st = safeStr(f.nearest_station || "");
-  // kanaが無い場合でも、駅名をひらがな寄せにしておくと比較が安定しやすい
-  const base = sk || st;
-  return toHira(base).trim();
-}
-
 function getGroups(f){
   if(f.age_groups) return f.age_groups;
-
   const ages = f.ages || f.ages_0_5 || {};
   function v(k, field){ return ages[k]?.[field]; }
   function sum3(field){
@@ -139,13 +128,20 @@ function signDelta(n){
   return `<span class="delta zero">0</span>`;
 }
 
+function stationKey(f){
+  // sorting key: station name (kana first if present)
+  const sk = safeStr(f.station_kana).trim();
+  const st = safeStr(f.nearest_station).trim();
+  return (sk || st || "~~~~").toLowerCase();
+}
+
 function rowHTML(f, prevF){
+  const station = safeStr(f.nearest_station||'');
+  const walk = (f.walk_minutes==null ? '—' : `${Number(f.walk_minutes)}分`);
+
   const addr = safeStr(f.address||'');
   const map = safeStr(f.map_url||'');
   const mapLink = map ? `<a href="${map}" target="_blank" rel="noopener">Google Map</a>` : '—';
-
-  const station = safeStr(f.nearest_station||'');
-  const walk = (f.walk_minutes==null || f.walk_minutes==="" ? '—' : `${Number(f.walk_minutes)}分`);
 
   const g = getGroups(f);
   function acc(k){ return fmt(g?.[k]?.accept); }
@@ -155,12 +151,11 @@ function rowHTML(f, prevF){
   const dAcc  = prevF ? (Number(f.totals?.accept||0) - Number(prevF.totals?.accept||0)) : null;
 
   return `<tr>
-    <td>
+    <td class="cell-name">
       <a href="facility.html?id=${encodeURIComponent(f.id)}">${safeStr(f.name)}</a>
-      <div class="small">施設番号：${safeStr(f.id)}</div>
+      <div class="small">施設番号：${safeStr(f.id)} / ${safeStr(f.ward||'')}</div>
     </td>
-    <td>${addr || '—'}</td>
-    <td>${mapLink}</td>
+
     <td>${station || '—'}</td>
     <td>${walk}</td>
 
@@ -173,12 +168,14 @@ function rowHTML(f, prevF){
     <td class="agecol">${acc('1')}</td><td class="agecol">${wai('1')}</td>
     <td class="agecol">${acc('2')}</td><td class="agecol">${wai('2')}</td>
     <td class="agecol">${acc('3-5')}</td><td class="agecol">${wai('3-5')}</td>
+
+    <td>${addr || '—'}</td>
+    <td>${mapLink}</td>
   </tr>`;
 }
 
 function sortFacilities(arr, mode){
   const a=[...arr];
-
   function groups(f){ return getGroups(f); }
   function gwait(f, key){
     const g = groups(f);
@@ -200,18 +197,11 @@ function sortFacilities(arr, mode){
     a.sort((x,y)=>gwait(y,"3-5")-gwait(x,"3-5"));
   } else if(mode==='station_walk_asc'){
     a.sort((x,y)=>{
-      const sx = pickStationKey(x);
-      const sy = pickStationKey(y);
-
-      // 駅名が空のものは最後へ
-      const xEmpty = (sx === "");
-      const yEmpty = (sy === "");
-      if(xEmpty !== yEmpty) return xEmpty ? 1 : -1;
-
-      // 駅名 → 徒歩 → 園名 の順でソート
+      const sx = stationKey(x);
+      const sy = stationKey(y);
       if(sx !== sy) return sx.localeCompare(sy, 'ja');
-      const wx = (x.walk_minutes==null || x.walk_minutes==="" ? 9999 : Number(x.walk_minutes));
-      const wy = (y.walk_minutes==null || y.walk_minutes==="" ? 9999 : Number(y.walk_minutes));
+      const wx = (x.walk_minutes==null ? 9999 : Number(x.walk_minutes));
+      const wy = (y.walk_minutes==null ? 9999 : Number(y.walk_minutes));
       if(wx !== wy) return wx - wy;
       return safeStr(x.name).localeCompare(safeStr(y.name),'ja');
     });
@@ -221,49 +211,49 @@ function sortFacilities(arr, mode){
   return a;
 }
 
-/* ★検索：漢字/かな両取り
-   - 入力(q)をそのまま/ひらがな/カタカナにして
-   - name / nearest_station はそのまま比較
-   - name_kana / station_kana は ひら/カタどちらでも当たるように比較
-*/
-function matchesQuery(f, q){
-  const q0 = normSearch(q);
-  const qH = normSearch(toHira(q0));
-  const qK = normSearch(toKata(q0));
+function buildWards(facilities){
+  const s = new Set();
+  for(const f of (facilities||[])){
+    const w = safeStr(f.ward||"").trim();
+    if(w) s.add(w);
+  }
+  return Array.from(s).sort((a,b)=>a.localeCompare(b,'ja'));
+}
 
-  const name = normSearch(f.name);
-  const st   = normSearch(f.nearest_station);
-
-  // kana列は「ひらがなに寄せて」保持している想定（そうでなくても両方当てる）
-  const nk   = normSearch(f.name_kana);
-  const sk   = normSearch(f.station_kana);
-
-  return (
-    (name && name.includes(q0)) ||
-    (st && st.includes(q0)) ||
-    (nk && (nk.includes(qH) || nk.includes(qK) || toHira(nk).includes(qH) || toKata(nk).includes(qK))) ||
-    (sk && (sk.includes(qH) || sk.includes(qK) || toHira(sk).includes(qH) || toKata(sk).includes(qK)))
-  );
+function getUrlParam(name){
+  const u = new URL(location.href);
+  return (u.searchParams.get(name) || "").trim();
+}
+function setUrlParam(name, value){
+  const u = new URL(location.href);
+  if(value) u.searchParams.set(name, value);
+  else u.searchParams.delete(name);
+  history.replaceState(null, "", u.toString());
 }
 
 async function main(){
   const months = await loadJSON('data/months.json');
-  const ms = (months.months||[]).slice().sort(); // ISO日付なので sort で昇順
-  const sel = document.getElementById('monthSelect');
-  sel.innerHTML = ms.map(m=>`<option value="${m}">${m}</option>`).join('');
-  sel.value = ms.length ? ms[ms.length-1] : '';
+  const ms = (months.months||[]).slice().sort();
+  const monthSel = document.getElementById('monthSelect');
+  monthSel.innerHTML = ms.map(m=>`<option value="${m}">${m}</option>`).join('');
+  monthSel.value = ms.length ? ms[ms.length-1] : '';
+
+  // URL param init
+  const wardParam = getUrlParam("ward");  // e.g. ?ward=港北区
+  const wardSel = document.getElementById('wardSelect');
 
   setAgeColsVisible(true);
 
   async function render(){
-    const month = sel.value;
+    const month = monthSel.value;
     const idx = ms.indexOf(month);
     const prevMonth = (idx > 0) ? ms[idx - 1] : null;
 
     const data = await loadJSON(`data/${month}.json`);
     const prevData = prevMonth ? await loadJSON(`data/${prevMonth}.json`) : null;
 
-    document.getElementById('monthLabel').textContent = prevMonth ? `${month}（前月：${prevMonth}）` : month;
+    document.getElementById('monthLabel').textContent =
+      prevMonth ? `${month}（前月：${prevMonth}）` : month;
 
     const prevMap = new Map();
     if(prevData && prevData.facilities){
@@ -272,31 +262,72 @@ async function main(){
       }
     }
 
-    const totWait = (data.facilities||[]).reduce((s,f)=>s+Number(f.totals?.wait||0),0);
-    const totAcc  = (data.facilities||[]).reduce((s,f)=>s+Number(f.totals?.accept||0),0);
+    // init ward select once per month load
+    const wards = buildWards(data.facilities||[]);
+    const currentWard = wardSel.value || wardParam || "";
+    const options = ['<option value="">全区（横浜市）</option>']
+      .concat(wards.map(w=>`<option value="${w}">${w}</option>`));
+    wardSel.innerHTML = options.join("");
+    if(currentWard && wards.includes(currentWard)) wardSel.value = currentWard;
+    else wardSel.value = "";
 
-    const prevTotWait = prevData ? (prevData.facilities||[]).reduce((s,f)=>s+Number(f.totals?.wait||0),0) : null;
-    const prevTotAcc  = prevData ? (prevData.facilities||[]).reduce((s,f)=>s+Number(f.totals?.accept||0),0) : null;
+    // apply URL (keep)
+    setUrlParam("ward", wardSel.value);
+
+    // filter by ward
+    let arr = data.facilities || [];
+    if(wardSel.value){
+      arr = arr.filter(f => safeStr(f.ward||"").trim() === wardSel.value);
+    }
+
+    // KPIs on filtered arr
+    const totWait = arr.reduce((s,f)=>s+Number(f.totals?.wait||0),0);
+    const totAcc  = arr.reduce((s,f)=>s+Number(f.totals?.accept||0),0);
+
+    let prevArr = null;
+    if(prevData){
+      prevArr = prevData.facilities || [];
+      if(wardSel.value){
+        prevArr = prevArr.filter(f => safeStr(f.ward||"").trim() === wardSel.value);
+      }
+    }
+    const prevTotWait = prevArr ? prevArr.reduce((s,f)=>s+Number(f.totals?.wait||0),0) : null;
+    const prevTotAcc  = prevArr ? prevArr.reduce((s,f)=>s+Number(f.totals?.accept||0),0) : null;
 
     const dTotWait = (prevTotWait==null) ? null : (totWait - prevTotWait);
     const dTotAcc  = (prevTotAcc==null) ? null : (totAcc - prevTotAcc);
 
-    document.getElementById('countLabel').textContent = (data.facilities||[]).length.toLocaleString('ja-JP');
+    document.getElementById('countLabel').textContent = arr.length.toLocaleString('ja-JP');
     document.getElementById('kpi').innerHTML = `
       <div class="pill">合計 入所待ち：${fmt(totWait)}（前月比 ${signDelta(dTotWait)}）</div>
       <div class="pill">合計 受入可能：${fmt(totAcc)}（前月比 ${signDelta(dTotAcc)}）</div>
-      <div class="pill">データ区：港北区</div>
+      <div class="pill">対象：${wardSel.value ? wardSel.value : '横浜市全域'}</div>
     `;
 
+    // search
     const q = document.getElementById('q').value.trim();
-    const sort = document.getElementById('sort').value;
-
-    let arr = data.facilities || [];
-
     if(q){
-      arr = arr.filter(f => matchesQuery(f, q));
+      const q0 = normSearch(q);
+      const qH = normSearch(toHira(q0));
+      const qK = normSearch(toKata(q0));
+
+      arr = arr.filter(f => {
+        const name = normSearch(f.name);
+        const nk   = normSearch(f.name_kana);
+        const st   = normSearch(f.nearest_station);
+        const sk   = normSearch(f.station_kana);
+
+        return (
+          name.includes(q0) ||
+          nk.includes(qH) || nk.includes(qK) ||
+          st.includes(q0) ||
+          sk.includes(qH) || sk.includes(qK)
+        );
+      });
     }
 
+    // sort
+    const sort = document.getElementById('sort').value;
     arr = sortFacilities(arr, sort);
 
     const tbody = document.querySelector('#tbl tbody');
@@ -304,7 +335,9 @@ async function main(){
     setAgeColsVisible(showAgeCols);
   }
 
-  sel.addEventListener('change', render);
+  // event bindings
+  monthSel.addEventListener('change', render);
+  wardSel.addEventListener('change', render);
   document.getElementById('q').addEventListener('input', render);
   document.getElementById('sort').addEventListener('change', render);
   document.getElementById('toggleCols').addEventListener('click', ()=>{
