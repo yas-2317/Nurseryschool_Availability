@@ -9212,10 +9212,10 @@
       "id": "1410051014892",
       "name": "オハナ新羽保育園",
       "ward": "港北区",
-      "address": "",
-      "map_url": "https://www.google.com/maps/search/?api=1&query=オハナ新羽保育園 港北区 横浜市",
-      "nearest_station": "",
-      "walk_minutes": "",
+      "address": "日本、〒223-0057 神奈川県横浜市港北区新羽町１６８５−２",
+      "map_url": "https://maps.google.com/?cid=2676927977747901871",
+      "nearest_station": "新羽駅",
+      "walk_minutes": "1",
       "updated": "2025-01-01",
       "totals": {
         "accept": 1,
@@ -9297,7 +9297,14 @@
           "capacity_est": 20,
           "wait_per_capacity_est": 0.0
         }
-      }
+      },
+      "lat": "35.528451",
+      "lng": "139.611968",
+      "facility_type": "establishment,point_of_interest,school",
+      "phone": "+81 45-532-0810",
+      "website": "http://kiyukai.or.jp/ohana_nippa/",
+      "name_kana": "おはな しん はね ほいくえん",
+      "station_kana": "しん はね えき"
     },
     {
       "id": "1410051017259",
