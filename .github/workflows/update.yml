@@ -1,5 +1,4 @@
-name: Update nursery data (monthly) + apply master to all months
-
+name: Monthly Update
 on:
   workflow_dispatch:
     inputs:
@@ -8,8 +7,8 @@ on:
         required: false
         default: "港北区"
   schedule:
-    # 毎月2日 02:20 JST（= 前日 17:20 UTC）
-    - cron: "20 17 1 * *"
+    # 毎月4日 0:00 JST
+    - cron: "00 15 3 * *"
 
 permissions:
   contents: write
