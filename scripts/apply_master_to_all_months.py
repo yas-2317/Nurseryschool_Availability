@@ -5,93 +5,149 @@ from __future__ import annotations
 
 import csv
 import json
-import re
+import os
 from pathlib import Path
-from typing import Any, Dict
-
-from pykakasi import kakasi
+from typing import Any, Dict, List, Optional
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 MASTER_CSV = DATA_DIR / "master_facilities.csv"
+MONTHS_JSON = DATA_DIR / "months.json"
 
-_kks = kakasi()
-_kks.setMode("J", "H")
-_kks.setMode("K", "H")
-_kks.setMode("H", "H")
-_conv = _kks.getConverter()
+WARD_FILTER = (os.getenv("WARD_FILTER", "") or "").strip() or None
 
-def hira(s: Any) -> str:
-    s = "" if s is None else str(s)
-    s = s.strip()
-    if not s:
-        return ""
-    s = _conv.do(s)
-    s = s.replace("　", " ")
-    s = re.sub(r"\s+", "", s)
-    return s
 
-def station_base(s: str) -> str:
-    s = (s or "").strip()
-    return s[:-1].strip() if s.endswith("駅") else s
+def safe(x: Any) -> str:
+    return "" if x is None else str(x)
+
 
 def load_master() -> Dict[str, Dict[str, str]]:
-    out: Dict[str, Dict[str, str]] = {}
     if not MASTER_CSV.exists():
-        return out
+        raise RuntimeError("data/master_facilities.csv が見つかりません")
+    out: Dict[str, Dict[str, str]] = {}
     with MASTER_CSV.open("r", encoding="utf-8-sig", newline="") as f:
         for row in csv.DictReader(f):
-            fid = (row.get("facility_id") or "").strip()
+            fid = safe(row.get("facility_id")).strip()
             if fid:
-                out[fid] = row
+                out[fid] = {k: safe(v) for k, v in row.items()}
     return out
+
+
+def load_months() -> List[str]:
+    if not MONTHS_JSON.exists():
+        raise RuntimeError("data/months.json が見つかりません")
+    obj = json.loads(MONTHS_JSON.read_text(encoding="utf-8"))
+    ms = obj.get("months") or []
+    return [safe(m).strip() for m in ms if safe(m).strip()]
+
+
+def as_int_str(x: str) -> Optional[str]:
+    s = safe(x).strip()
+    if s == "" or s.lower() == "null" or s == "-":
+        return None
+    try:
+        return str(int(float(s)))
+    except Exception:
+        return None
+
+
+def apply_master_to_facility(f: Dict[str, Any], m: Dict[str, str]) -> int:
+    """
+    f: month json facility object
+    m: master row
+    returns: number of fields updated
+    """
+    updated = 0
+
+    mapping = {
+        "address": "address",
+        "lat": "lat",
+        "lng": "lng",
+        "map_url": "map_url",
+        "facility_type": "facility_type",
+        "phone": "phone",
+        "website": "website",
+        "notes": "notes",
+        "nearest_station": "nearest_station",
+        "name_kana": "name_kana",
+        "station_kana": "station_kana",
+    }
+
+    for jkey, mkey in mapping.items():
+        mv = safe(m.get(mkey)).strip()
+        if mv == "":
+            continue
+        cur = safe(f.get(jkey)).strip()
+        if cur != mv:
+            f[jkey] = mv
+            updated += 1
+
+    # walk_minutes: normalize to int-string
+    wm = as_int_str(safe(m.get("walk_minutes")))
+    if wm is not None:
+        cur = safe(f.get("walk_minutes")).strip()
+        if cur != wm:
+            f["walk_minutes"] = wm
+            updated += 1
+
+    return updated
+
 
 def main() -> None:
     master = load_master()
-    if not master:
-        raise RuntimeError("master_facilities.csv が見つからない/空です")
+    months = load_months()
 
-    changed_files = 0
-    changed_rows = 0
+    total_files = 0
+    total_facilities = 0
+    total_updates = 0
 
-    for p in sorted(DATA_DIR.glob("*.json")):
-        if p.name == "months.json":
+    for month in months:
+        p = DATA_DIR / f"{month}.json"
+        if not p.exists():
             continue
 
         obj = json.loads(p.read_text(encoding="utf-8"))
         facs = obj.get("facilities") or []
-        dirty = False
+
+        if not isinstance(facs, list):
+            continue
+
+        changed = False
+        file_updates = 0
+        file_fac_count = 0
 
         for f in facs:
-            fid = str(f.get("id") or "").strip()
-            if not fid:
+            if not isinstance(f, dict):
+                continue
+            fid = safe(f.get("id")).strip()
+            ward = safe(f.get("ward")).strip()
+            if WARD_FILTER and WARD_FILTER not in ward:
                 continue
 
             m = master.get(fid)
             if not m:
                 continue
 
-            # masterの値を反映（空欄は無理に上書きしない）
-            for k in ["address","lat","lng","map_url","facility_type","phone","website","notes","nearest_station","walk_minutes","name_kana","station_kana"]:
-                mv = (m.get(k) or "").strip()
-                if mv != "":
-                    f[k] = mv
+            u = apply_master_to_facility(f, m)
+            if u > 0:
+                changed = True
+                file_updates += u
+            file_fac_count += 1
 
-            # kanaが空なら生成して埋める（上書き可）
-            if not (f.get("name_kana") or "").strip():
-                f["name_kana"] = hira(f.get("name") or "")
-            if not (f.get("station_kana") or "").strip():
-                base = station_base(f.get("nearest_station") or "")
-                f["station_kana"] = hira(base)
-
-            dirty = True
-
-        if dirty:
+        if changed:
             p.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
-            changed_files += 1
-            changed_rows += len(facs)
 
-    print(f"DONE. updated files={changed_files}, touched facility rows={changed_rows}")
+        total_files += 1
+        total_facilities += file_fac_count
+        total_updates += file_updates
+
+        print(f"[{month}] facilities={file_fac_count} updates={file_updates} changed={changed}")
+
+    print("DONE")
+    print("  files:", total_files)
+    print("  facilities_scanned:", total_facilities)
+    print("  updated_cells:", total_updates)
+
 
 if __name__ == "__main__":
     main()
