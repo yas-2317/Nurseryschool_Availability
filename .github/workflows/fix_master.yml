@@ -1,4 +1,4 @@
-name: Fix master + rebuild site data
+name: Fix master
 
 on:
   workflow_dispatch:
@@ -88,7 +88,8 @@ jobs:
         run: |
           set -euxo pipefail
           python -m pip install --upgrade pip
-          pip install requests
+          # ★ bs4 対策：beautifulsoup4 を必ず入れる
+          pip install requests beautifulsoup4
 
       - name: Ensure scripts exist
         shell: bash
@@ -97,6 +98,7 @@ jobs:
           test -f scripts/fix_master_with_google_places.py
           test -f scripts/update_from_yokohama.py
           python -V
+          python -c "import bs4; print('bs4 OK', bs4.__version__)"
           ls -la data || true
 
       - name: Optional wipe station cache
