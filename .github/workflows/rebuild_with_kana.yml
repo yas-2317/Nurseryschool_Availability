@@ -1,4 +1,4 @@
-name: Fix master + rebuild site data
+name: Fix master + rebuild with kana
 
 on:
   workflow_dispatch:
