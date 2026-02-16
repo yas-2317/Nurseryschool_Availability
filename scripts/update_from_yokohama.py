@@ -64,7 +64,13 @@ def detect_month(rows: List[Dict[str, str]]) -> str:
         for k in ("更新日", "更新年月日", "更新日時", "更新年月"):
             v = str(rows[0].get(k, "")).strip()
             if v:
-                return v[:10].replace("/", "-")
+                v = v[:10].replace("/", "-")
+                # 月初へ丸め
+                try:
+                    y, m, _ = v.split("-")
+                    return date(int(y), int(m), 1).isoformat()
+                except Exception:
+                    return v
     today = date.today()
     return date(today.year, today.month, 1).isoformat()
 
@@ -133,7 +139,6 @@ def scrape_csv_urls() -> Dict[str, str]:
     links = list(dict.fromkeys(links))
 
     best: Dict[str, str] = {}
-
     for url in links:
         if "0926_" in url:
             best["accept"] = url
@@ -180,9 +185,7 @@ def load_master() -> Dict[str, Dict[str, str]]:
 def guess_facility_id_key(rows: List[Dict[str, str]]) -> str:
     if not rows:
         raise RuntimeError("CSVが空です")
-
     header = list(rows[0].keys())
-    print("DEBUG: header columns =", header)
 
     candidates = [
         "施設番号", "施設・事業所番号", "施設事業所番号", "事業所番号",
@@ -211,7 +214,6 @@ def guess_facility_id_key(rows: List[Dict[str, str]]) -> str:
             best_key, best_score = k, score
 
     if best_key and best_score >= max(10, int(N * 0.30)):
-        print(f"DEBUG: guessed facility id col by content: {best_key} (score={best_score}/{N})")
         return best_key
 
     raise RuntimeError("施設番号列が見つかりません（列名・中身推定ともに失敗）")
@@ -298,13 +300,11 @@ def main() -> None:
 
     fid_key = guess_facility_id_key(accept_rows)
     A = index_by_key(accept_rows, fid_key)
-
     W = index_by_key(wait_rows, fid_key) if wait_rows and fid_key in wait_rows[0] else {}
     E = index_by_key(enrolled_rows, fid_key) if enrolled_rows and fid_key in enrolled_rows[0] else {}
 
     ward_key = pick_ward_key(accept_rows[0]) if accept_rows else None
     name_key = pick_name_key(accept_rows[0]) if accept_rows else None
-    print("DEBUG: fid_key =", fid_key, "ward_key =", ward_key, "name_key =", name_key)
 
     master = load_master()
     target = norm(WARD_FILTER) if WARD_FILTER else None
@@ -329,11 +329,9 @@ def main() -> None:
         lng = (m.get("lng") or "").strip()
         map_url = (m.get("map_url") or "").strip() or build_map_url(name, ward, address, lat, lng)
 
-        # ★追加：駅/徒歩（HP表示用）
         nearest_station = (m.get("nearest_station") or "").strip() or None
         walk_minutes = to_int((m.get("walk_minutes") or "").strip())
 
-        # ★追加：連絡先等も載せる（将来表示したくなった時に便利）
         phone = (m.get("phone") or "").strip() or None
         website = (m.get("website") or "").strip() or None
         facility_type = (m.get("facility_type") or "").strip() or None
@@ -382,8 +380,6 @@ def main() -> None:
                 "id": fid,
                 "name": name,
                 "ward": ward,
-
-                # master由来（HPで表示したい情報）
                 "address": address,
                 "map_url": map_url,
                 "nearest_station": nearest_station,
@@ -392,9 +388,7 @@ def main() -> None:
                 "website": website,
                 "facility_type": facility_type,
                 "notes": notes,
-
                 "updated": month,
-
                 "totals": {
                     "accept": tot_accept,
                     "wait": tot_wait,
@@ -407,9 +401,8 @@ def main() -> None:
             }
         )
 
-    print("facilities count:", len(facilities))
-    if len(facilities) == 0:
-        raise RuntimeError("facilitiesが0件です（区フィルタ/列名不一致の可能性）")
+    if not facilities:
+        raise RuntimeError("facilitiesが0件です（区フィルタ/列不一致の可能性）")
 
     month_path = DATA_DIR / f"{month}.json"
     month_path.write_text(
