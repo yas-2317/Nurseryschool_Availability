@@ -133,6 +133,7 @@ def scrape_csv_urls() -> Dict[str, str]:
     links = list(dict.fromkeys(links))
 
     best: Dict[str, str] = {}
+
     for url in links:
         if "0926_" in url:
             best["accept"] = url
@@ -297,6 +298,7 @@ def main() -> None:
 
     fid_key = guess_facility_id_key(accept_rows)
     A = index_by_key(accept_rows, fid_key)
+
     W = index_by_key(wait_rows, fid_key) if wait_rows and fid_key in wait_rows[0] else {}
     E = index_by_key(enrolled_rows, fid_key) if enrolled_rows and fid_key in enrolled_rows[0] else {}
 
@@ -327,13 +329,15 @@ def main() -> None:
         lng = (m.get("lng") or "").strip()
         map_url = (m.get("map_url") or "").strip() or build_map_url(name, ward, address, lat, lng)
 
-        # ★ master追加列（UIで使う）
-        nearest_station = (m.get("nearest_station") or "").strip()
-        walk_minutes = to_int(m.get("walk_minutes"))
-        phone = (m.get("phone") or "").strip()
-        website = (m.get("website") or "").strip()
-        notes = (m.get("notes") or "").strip()
-        facility_type = (m.get("facility_type") or "").strip()
+        # ★追加：駅/徒歩（HP表示用）
+        nearest_station = (m.get("nearest_station") or "").strip() or None
+        walk_minutes = to_int((m.get("walk_minutes") or "").strip())
+
+        # ★追加：連絡先等も載せる（将来表示したくなった時に便利）
+        phone = (m.get("phone") or "").strip() or None
+        website = (m.get("website") or "").strip() or None
+        facility_type = (m.get("facility_type") or "").strip() or None
+        notes = (m.get("notes") or "").strip() or None
 
         tot_accept = get_total(ar)
         tot_wait = get_total(wr) if wr else None
@@ -379,21 +383,18 @@ def main() -> None:
                 "name": name,
                 "ward": ward,
 
-                # ★ ここがUIで表示される
+                # master由来（HPで表示したい情報）
                 "address": address,
                 "map_url": map_url,
                 "nearest_station": nearest_station,
                 "walk_minutes": walk_minutes,
-
-                # 使いたければUI側で表示できる
                 "phone": phone,
                 "website": website,
-                "notes": notes,
                 "facility_type": facility_type,
-                "lat": lat,
-                "lng": lng,
+                "notes": notes,
 
                 "updated": month,
+
                 "totals": {
                     "accept": tot_accept,
                     "wait": tot_wait,
