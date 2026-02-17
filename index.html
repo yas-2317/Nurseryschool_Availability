@@ -101,6 +101,31 @@
       font-size: 12px;
       opacity: .8;
     }
+      /* ===== thead が消える対策（styles.css の display:none 等を強制上書き） ===== */
+      #tbl thead { 
+        display: table-header-group !important; 
+      }
+      #tbl tbody { 
+        display: table-row-group !important; 
+      }
+      #tbl tr { 
+        display: table-row !important; 
+      }
+      #tbl th, #tbl td { 
+        display: table-cell !important; 
+      }
+      
+      /* ヘッダーの sticky が効くように（念のため） */
+      #tbl thead th{
+        position: sticky !important;
+        top: 0 !important;
+        background: #fff !important;
+        z-index: 10 !important;
+      }
+      #tbl thead th.col-name{
+        z-index: 20 !important;
+      }
+    
   </style>
 </head>
 
