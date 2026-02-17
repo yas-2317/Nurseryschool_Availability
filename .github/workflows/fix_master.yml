@@ -87,6 +87,19 @@ jobs:
           fi
           ls -la data || true
 
+      - name: Seed master from latest month JSON (expand to Yokohama-wide)
+        env:
+          # ★ここは基本 空欄（全域seed）推奨。港北だけseedしたいなら inputs.ward_filter にしてOK
+          WARD_FILTER: ""
+          # SEED_MONTH を固定したければ "2026-02-01" など
+          SEED_MONTH: ""
+        run: |
+          set -euxo pipefail
+          test -f scripts/seed_master_from_month_json.py
+          python -u scripts/seed_master_from_month_json.py
+          echo "---- master head ----"
+          head -n 5 data/master_facilities.csv
+
       - name: Fix master_facilities.csv (Google)
         env:
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
@@ -138,6 +151,7 @@ jobs:
           git add data || true
           git add scripts/apply_master_to_all_months.py || true
           git commit -m "Fix master + apply to all months + rebuild latest" || true
+          git add scripts/seed_master_from_month_json.py || true
 
           git fetch origin main
           git rebase origin/main
