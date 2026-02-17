@@ -10,11 +10,8 @@ function fmtNum(n){
   if(n==null || n==="" || !isFinite(x)) return "—";
   return x.toLocaleString('ja-JP');
 }
-
-// Backward compat: some pages use fmt()
-function fmt(n){
-  return fmtNum(n);
-}
+// backward compat
+function fmt(n){ return fmtNum(n); }
 
 async function loadJSON(path){
   const res = await fetch(path, { cache: "no-store" });
@@ -24,9 +21,8 @@ async function loadJSON(path){
   return await res.json();
 }
 
-// Normalize Japanese search text a bit (lightweight)
+// very light normalization for search
 function normalizeForSearch(s){
-  // unify spaces + lowercase
   let t = safeStr(s).replace(/　/g, " ");
   t = t.replace(/\s+/g, " ").trim().toLowerCase();
 
@@ -35,4 +31,15 @@ function normalizeForSearch(s){
     String.fromCharCode(ch.charCodeAt(0) - 0x60)
   );
   return t;
+}
+
+// URL query param helper
+function getParam(key){
+  try{
+    const u = new URL(location.href);
+    const v = u.searchParams.get(key);
+    return v == null ? "" : v;
+  }catch(e){
+    return "";
+  }
 }
