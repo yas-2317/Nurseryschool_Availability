@@ -6,7 +6,7 @@ on:
       ward_filter:
         description: "対象区（例：港北区）。空欄なら全件"
         required: false
-        default: "港北区"
+        default: ""
       months_back:
         description: "何か月分さかのぼるか（例：24）"
         required: true
