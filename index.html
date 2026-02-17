@@ -6,20 +6,15 @@
   <title>横浜市 保育園 受入可能数・入所待ち人数（年齢別）</title>
   <link rel="stylesheet" href="styles.css"/>
 
-  <!-- 追加：スマホで「表は維持しつつ」見やすくする最小CSS -->
+  <!-- 追加：スマホで“表は維持”しつつ一覧性UP（列を減らす） -->
   <style>
-    /* “表は維持”のまま、スマホはコンパクト列にする */
     .modebar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
     .modebar .badge{ margin-left:auto; }
-
-    /* 列の表示/非表示（JSが td/th に .hide-col を付けます） */
     th.hide-col, td.hide-col { display:none !important; }
 
-    /* スマホ時：表は横スクロール前提だが、列を絞ってスクロール量を減らす */
+    /* スマホでも表は出す（ただし列を減らして横スクロール量を減らす） */
     @media (max-width: 768px){
-      /* テーブルは残す（非表示にしない） */
-      table{ min-width: 760px; }
-      /* コントロール類は縦積みに寄せる（styles.css と競合してもOKな程度） */
+      table{ min-width: 760px; } /* 最低限の列でもヘッダー崩れ防止 */
       .modebar .badge{ width:100%; margin-left:0; }
     }
   </style>
@@ -55,7 +50,7 @@
       <span class="badge">※「入所待ち人数」は園ごとの申込件数（重複計上あり）</span>
     </div>
 
-    <!-- 追加：スマホの一覧性のための “表示モード” -->
+    <!-- 表は維持：スマホだけコンパクト列にできる -->
     <div class="modebar">
       <label class="inline">
         <span class="small">表示モード</span>
@@ -73,7 +68,7 @@
 <main class="container">
   <div class="card">
     <div class="kpi" id="kpi"></div>
-    <div class="small"></div>
+    <div class="small" id="statusLine">読み込み中…</div>
   </div>
 
   <div class="card tablewrap">
@@ -114,10 +109,52 @@
 
 <script src="common.js"></script>
 <script>
-/* =========================
-   index-local helpers
-   - ここで未定義事故を潰す：normalizeForSearch / setParam
-   ========================= */
+/* =========================================================
+   ✅ スマホで“表が出ない”のを潰すためのガード
+   - common.js が読めない/古い/未定義でも落ちない
+   ========================================================= */
+
+(function ensureGlobals(){
+  // safeStr
+  if(typeof window.safeStr !== "function"){
+    window.safeStr = (x)=> (x===null||x===undefined) ? "" : String(x);
+  }
+  // fmt
+  if(typeof window.fmt !== "function"){
+    window.fmt = (x)=>{
+      if (x === null || x === undefined) return "—";
+      const s = String(x).trim();
+      if (s === "" || s.toLowerCase() === "null" || s === "-") return "—";
+      const n = Number(s);
+      if (!Number.isFinite(n)) return "—";
+      return n.toLocaleString("ja-JP");
+    };
+  }
+  if(typeof window.fmtNum !== "function"){
+    window.fmtNum = window.fmt;
+  }
+  // getParam
+  if(typeof window.getParam !== "function"){
+    window.getParam = (key)=>{
+      try{
+        const u = new URL(window.location.href);
+        return u.searchParams.get(key);
+      }catch(e){
+        const m = new RegExp("[?&]"+key+"=([^&]+)").exec(window.location.search);
+        return m ? decodeURIComponent(m[1]) : null;
+      }
+    };
+  }
+  // loadJSON
+  if(typeof window.loadJSON !== "function"){
+    window.loadJSON = async (path)=>{
+      const url = path + (path.includes("?") ? "&" : "?") + "v=" + Date.now();
+      const res = await fetch(url, { cache: "no-store" });
+      if(!res.ok) throw new Error(`Failed to load ${path} (${res.status})`);
+      return await res.json();
+    };
+  }
+})();
 
 // カタカナ→ひらがな
 function kataToHira(s){
@@ -234,12 +271,10 @@ function rowHTML(f, prevF){
 
 function sortFacilities(arr, mode){
   const a=[...arr];
-
   function gwait(f, key){
     const g = getGroups(f);
     return Number(g?.[key]?.wait ?? 0);
   }
-
   if(mode==='wait_desc'){
     a.sort((x,y)=>(Number(y.totals?.wait||0)-Number(x.totals?.wait||0)));
   } else if(mode==='accept_desc'){
@@ -257,11 +292,9 @@ function sortFacilities(arr, mode){
       const sx = stationKey(x);
       const sy = stationKey(y);
       if(sx !== sy) return sx.localeCompare(sy,'ja');
-
       const wx = (x.walk_minutes==null || String(x.walk_minutes).trim()==="" ? 9999 : Number(x.walk_minutes));
       const wy = (y.walk_minutes==null || String(y.walk_minutes).trim()==="" ? 9999 : Number(y.walk_minutes));
       if(wx !== wy) return wx - wy;
-
       return safeStr(x.name).localeCompare(safeStr(y.name),'ja');
     });
   } else if(mode==='name_asc'){
@@ -313,63 +346,51 @@ function debounce(fn, ms=250){
   };
 }
 
-/* =========================
-   Mobile compact mode:
-   - “表は維持”
-   - 列だけ減らす
-   ========================= */
-
+/* ---- compact mode columns ---- */
 const COMPACT_HIDE_COLS = new Set([
-  "addr","map",      // 住所・地図は重いのでスマホは隠す（必要なら詳細へ）
-  "dwait","dacc",    // 前月比もスマホは隠して一覧性を優先（必要なら full へ）
-  "ward",            // スマホは区列も省略（絞り込みは上のSelectでできる）
-  "a0a","a0w","a1a","a1w","a2a","a2w","a35a","a35w" // 年齢別
+  "addr","map","dwait","dacc","ward",
+  "a0a","a0w","a1a","a1w","a2a","a2w","a35a","a35w"
 ]);
 
 function isMobile(){
-  return window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+  return window.matchMedia ? window.matchMedia("(max-width: 768px)").matches : (window.innerWidth <= 768);
 }
 
 function applyViewMode(mode){
-  // mode: "compact" | "full"
   const hide = (mode === "compact");
 
-  // th
   document.querySelectorAll("#tbl thead th").forEach(th=>{
     const c = th.getAttribute("data-col");
     if(!c) return;
-    const shouldHide = hide && COMPACT_HIDE_COLS.has(c);
-    th.classList.toggle("hide-col", shouldHide);
+    th.classList.toggle("hide-col", hide && COMPACT_HIDE_COLS.has(c));
   });
 
-  // td
   document.querySelectorAll("#tbl tbody td").forEach(td=>{
     const c = td.getAttribute("data-col");
     if(!c) return;
-    const shouldHide = hide && COMPACT_HIDE_COLS.has(c);
-    td.classList.toggle("hide-col", shouldHide);
+    td.classList.toggle("hide-col", hide && COMPACT_HIDE_COLS.has(c));
   });
 
-  // 年齢列トグルは “full” の時だけ効かせやすいので、compactでは強制OFF
   if(mode === "compact"){
     setAgeColsVisible(false);
   }
 }
 
 async function main(){
+  const statusLine = document.getElementById("statusLine");
+
   const months = await loadJSON('data/months.json');
   const ms = (months.months||[]).slice().sort();
 
   const monthSel = document.getElementById('monthSelect');
   monthSel.innerHTML = ms.map(m=>`<option value="${m}">${m}</option>`).join('');
 
-  // restore from URL
   const pMonth = getParam('month');
   const pQ     = getParam('q');
   const pWard  = getParam('ward');
   const pSort  = getParam('sort');
-  const pAge   = getParam('age');   // "0" => hide age cols
-  const pView  = getParam('view');  // "compact" | "full" | ""
+  const pAge   = getParam('age');
+  const pView  = getParam('view');
 
   monthSel.value = (pMonth && ms.includes(pMonth)) ? pMonth : (ms.length ? ms[ms.length-1] : '');
 
@@ -379,17 +400,16 @@ async function main(){
   const sortEl = document.getElementById('sort');
   if(pSort && Array.from(sortEl.options).some(o=>o.value===pSort)) sortEl.value = pSort;
 
-  // age cols initial
   setAgeColsVisible(pAge === "0" ? false : true);
 
   const wardSel = document.getElementById('wardSelect');
   const viewSel = document.getElementById('viewMode');
-
-  // view select initial
   if(pView && ["compact","full"].includes(pView)) viewSel.value = pView;
   else viewSel.value = "auto";
 
   async function render(){
+    statusLine.textContent = "読み込み中…";
+
     const month = monthSel.value;
     const idx = ms.indexOf(month);
     const prevMonth = (idx > 0) ? ms[idx - 1] : null;
@@ -407,15 +427,12 @@ async function main(){
       }
     }
 
-    // ward dropdown
     const wards = buildWardOptions(data.facilities||[]);
-    const curWard = (pWard ?? wardSel.value) || "";
     wardSel.innerHTML =
       `<option value="">全区</option>` +
       wards.map(w=>`<option value="${w}">${w}</option>`).join('');
-    wardSel.value = wards.includes(curWard) ? curWard : "";
+    wardSel.value = (pWard && wards.includes(pWard)) ? pWard : (wards.includes(wardSel.value) ? wardSel.value : "");
 
-    // KPI (whole month)
     const totWait = (data.facilities||[]).reduce((s,f)=>s+Number(f.totals?.wait||0),0);
     const totAcc  = (data.facilities||[]).reduce((s,f)=>s+Number(f.totals?.accept||0),0);
 
@@ -431,7 +448,6 @@ async function main(){
       <div class="pill">対象：${safeStr(data.ward||"横浜市")}</div>
     `;
 
-    // filter + sort
     const q = qEl.value.trim();
     const sort = sortEl.value;
     const wardFilter = wardSel.value;
@@ -448,19 +464,15 @@ async function main(){
 
     arr = sortFacilities(arr, sort);
 
-    // count label: shown/total
     document.getElementById('countLabel').textContent =
       `${arr.length.toLocaleString('ja-JP')} / ${totalCount.toLocaleString('ja-JP')}`;
 
-    // render table
     const tbody = document.querySelector('#tbl tbody');
     tbody.innerHTML = arr.map(f => rowHTML(f, prevMap.get(String(f.id)))).join('');
 
-    // apply view mode (after table is rendered)
+    // view mode
     let view = viewSel.value;
-    if(view === "auto"){
-      view = isMobile() ? "compact" : "full";
-    }
+    if(view === "auto") view = isMobile() ? "compact" : "full";
     applyViewMode(view);
 
     // URL params
@@ -468,12 +480,10 @@ async function main(){
     setParam('q', qEl.value.trim());
     setParam('ward', wardSel.value);
     setParam('sort', sortEl.value);
-
-    // age param：showAgeCols を維持（compactでは内部的にOFFされるがURLはユーザー意図を尊重）
     setParam('age', showAgeCols ? "" : "0");
-
-    // view param：auto はパラメータから消す（URLを汚さない）
     setParam('view', (viewSel.value === "auto") ? "" : viewSel.value);
+
+    statusLine.textContent = arr.length ? "" : "該当する園がありません（条件を変えてください）";
   }
 
   const renderDebounced = debounce(render, 220);
@@ -482,26 +492,34 @@ async function main(){
   sortEl.addEventListener('change', render);
   wardSel.addEventListener('change', render);
   qEl.addEventListener('input', renderDebounced);
-
   viewSel.addEventListener('change', render);
 
   document.getElementById('toggleCols').addEventListener('click', ()=>{
     setAgeColsVisible(!showAgeCols);
-    render(); // 即反映
+    render();
   });
 
-  // 画面幅が変わったら auto の時だけ追従
-  if(window.matchMedia){
-    const mq = window.matchMedia("(max-width: 768px)");
-    mq.addEventListener?.("change", ()=>{
-      if(viewSel.value === "auto") render();
-    });
+  // ✅ iOS古め対策：matchMedia の change は addListener も試す（例外で止めない）
+  try{
+    if(window.matchMedia){
+      const mq = window.matchMedia("(max-width: 768px)");
+      if(mq.addEventListener){
+        mq.addEventListener("change", ()=>{ if(viewSel.value === "auto") render(); });
+      }else if(mq.addListener){
+        mq.addListener(()=>{ if(viewSel.value === "auto") render(); });
+      }
+    }
+  }catch(e){
+    // ignore
   }
 
   await render();
 }
 
 main().catch(err=>{
+  // ここで落ちるとスマホは真っ白になりがちなので、画面にも出す
+  const s = document.getElementById("statusLine");
+  if(s) s.textContent = "エラー: " + err.message;
   alert(err.message);
   console.error(err);
 });
