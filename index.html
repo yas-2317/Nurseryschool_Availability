@@ -9,113 +9,83 @@
   <style>
     .modebar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
     .modebar .badge{ margin-left:auto; }
-    th.hide-col, td.hide-col, col.hide-col { display:none !important; }
+    th.hide-col, td.hide-col { display:none !important; }
 
-    /* ====== ヘッダー分離型テーブル（確実に表示される） ====== */
-    .table-shell{
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      overflow: hidden; /* 角丸維持 */
-    }
+    /* ===== 1テーブル + 行列ヘッダー固定（sticky） ===== */
 
-    /* ヘッダー枠（横スクロールだけ同期。スクロールバーは隠す） */
-    .tablehead-wrap{
-      overflow: auto;
-      scrollbar-width: none;          /* Firefox */
-      -ms-overflow-style: none;       /* IE/Edge legacy */
-      background: var(--thead-bg);
-
-      /* ★ body側の縦スクロールバー幅ぶんを確保して列ズレを防ぐ */
-      padding-right: var(--sbw, 0px);
-    }
-    .tablehead-wrap::-webkit-scrollbar{ display:none; } /* Webkit */
-
-    /* 本体枠（縦横スクロール） */
-    .tablebody-wrap{
-      overflow: auto;
+    /* 重要：stickyヘッダーが効くスクロール枠 */
+    .tablewrap{
+      overflow:auto;
       -webkit-overflow-scrolling: touch;
-      max-height: 70vh;
-      background: var(--surface);
-
-      /* ★可能ならこれだけでもズレが減る（対応ブラウザのみ） */
-      scrollbar-gutter: stable;
+      position: relative;
+      max-height: 70vh;            /* 縦スクロールをここで発生させる */
+      border-radius: 14px;
     }
 
-    /* 2つの table の基本揃え */
-    #tblHead, #tblBody{
+    /* styles.css で #tbl は min-width:100% + width:max-content になってる前提 */
+    #tbl{
       border-collapse: separate;
       border-spacing: 0;
-      width: max-content;
-      min-width: 100%;
-      background: var(--surface);
-      color: var(--text);
-      box-sizing: border-box;
-    }
-    #tblHead{ background: transparent; } /* ヘッダー背景は th 側に */
-
-    #tblHead th, #tblBody td{
-      padding: 10px 12px;
-      border-bottom: 1px solid #eef2f7;
-      vertical-align: top;
-      white-space: nowrap;
-      font-size: 13px;
-      box-sizing: border-box;
     }
 
-    /* ヘッダー見た目は styles.css と同等に（確実に） */
-    #tblHead th{
+    /* 列ヘッダー固定（styles.css にもあるが、index側で強めに安定化） */
+    #tbl thead th{
+      position: sticky;
+      top: 0;
+      z-index: 50;
       background: var(--thead-bg);
       color: var(--thead-text);
-      text-align: left;
-      font-weight: 700;
-      font-size: 12px;
-      line-height: 1.2;
-      border-bottom: 1px solid rgba(255,255,255,.15);
+      background-clip: padding-box;
     }
 
-    /* 交互行 */
-    #tblBody tbody tr:nth-child(even){ background: var(--row-alt); }
-
-    /* 左端固定（園名列）— ヘッダーも本体も */
-    .col-name{
+    /* 行ヘッダー（園名列）固定 */
+    #tbl th.col-name,
+    #tbl td.col-name{
       position: sticky;
       left: 0;
+      z-index: 20;                /* bodyセルが他セルに負けない */
       background: var(--surface);
-      z-index: 5;
       box-shadow: 1px 0 0 rgba(0,0,0,.10);
+      background-clip: padding-box;
     }
-    #tblHead th.col-name{
+
+    /* 左上（園名ヘッダー）は最前面 */
+    #tbl thead th.col-name{
+      z-index: 60;
       background: var(--thead-bg);
       color: var(--thead-text);
-      z-index: 10;
       box-shadow: 1px 0 0 rgba(255,255,255,.15);
     }
 
-    /* 園名セルの省略（行高を増やさない） */
-    #tblBody td.col-name{
+    /* 園名セルは省略表示（行高を崩さない） */
+    #tbl td.col-name{
+      white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: 360px;
     }
 
     /* 住所列：PCは1行省略（要望） */
     @media (min-width: 769px){
-      #tblBody td.col-addr .cell-ellipsis{
+      #tbl td.col-addr .cell-ellipsis{
+        display:inline-block;
+        max-width: 520px;          /* 好みで調整 */
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        display: inline-block;
-        max-width: 520px;
         vertical-align: top;
       }
     }
 
-    /* スマホ */
+    /* スマホ：園名列は120px固定（要望） */
     @media (max-width: 768px){
-      .tablebody-wrap{ max-height: 75vh; }
-      #tblHead, #tblBody{ min-width: 720px; }
+      .tablewrap{ max-height: 75vh; }
+      #tbl th.col-name{ min-width: 120px !important; width:120px !important; max-width:120px !important; }
+      #tbl td.col-name{ min-width: 120px !important; width:120px !important; max-width:120px !important; }
+      #tbl{ min-width: 720px; }   /* 横スクロール前提（表は維持） */
+
       .modebar .badge{ width:100%; margin-left:0; }
-      .scrollhint{ display:block; margin-top:8px; }
+      .scrollhint{ display:block; }
     }
 
     .scrollhint{
@@ -124,6 +94,12 @@
       opacity: .8;
       padding: 8px 2px 0 2px;
     }
+
+    /* 念のため：theadが消える系の事故を強制回避 */
+    #tbl thead{ display: table-header-group !important; }
+    #tbl tbody{ display: table-row-group !important; }
+    #tbl tr{ display: table-row !important; }
+    #tbl th, #tbl td{ display: table-cell !important; }
   </style>
 </head>
 
@@ -176,50 +152,35 @@
     <div class="small"></div>
   </div>
 
-  <div class="card">
-    <div class="table-shell">
+  <div class="card tablewrap">
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th data-col="name" class="col-name" style="min-width:240px;">園名</th>
+          <th data-col="station" style="min-width:140px;">最寄り駅</th>
+          <th data-col="walk" style="min-width:80px;">徒歩</th>
 
-      <!-- ヘッダー（別テーブル） -->
-      <div class="tablehead-wrap" id="headWrap">
-        <table id="tblHead">
-          <colgroup id="colHead"></colgroup>
-          <thead>
-            <tr>
-              <th data-col="name" class="col-name">園名</th>
-              <th data-col="station">最寄り駅</th>
-              <th data-col="walk">徒歩</th>
+          <th data-col="accept" style="min-width:90px;">受入（合計）</th>
+          <th data-col="wait" style="min-width:90px;">待ち（合計）</th>
+          <th data-col="dwait" style="min-width:100px;">前月比 待ち</th>
+          <th data-col="dacc" style="min-width:100px;">前月比 受入</th>
 
-              <th data-col="accept">受入（合計）</th>
-              <th data-col="wait">待ち（合計）</th>
-              <th data-col="dwait">前月比 待ち</th>
-              <th data-col="dacc">前月比 受入</th>
+          <th data-col="a0a" class="agecol" style="min-width:80px;">0 受入</th>
+          <th data-col="a0w" class="agecol" style="min-width:80px;">0 待ち</th>
+          <th data-col="a1a" class="agecol" style="min-width:80px;">1 受入</th>
+          <th data-col="a1w" class="agecol" style="min-width:80px;">1 待ち</th>
+          <th data-col="a2a" class="agecol" style="min-width:80px;">2 受入</th>
+          <th data-col="a2w" class="agecol" style="min-width:80px;">2 待ち</th>
+          <th data-col="a35a" class="agecol" style="min-width:80px;">3-5 受入</th>
+          <th data-col="a35w" class="agecol" style="min-width:80px;">3-5 待ち</th>
 
-              <th data-col="a0a" class="agecol">0 受入</th>
-              <th data-col="a0w" class="agecol">0 待ち</th>
-              <th data-col="a1a" class="agecol">1 受入</th>
-              <th data-col="a1w" class="agecol">1 待ち</th>
-              <th data-col="a2a" class="agecol">2 受入</th>
-              <th data-col="a2w" class="agecol">2 待ち</th>
-              <th data-col="a35a" class="agecol">3-5 受入</th>
-              <th data-col="a35w" class="agecol">3-5 待ち</th>
-
-              <th data-col="addr">住所</th>
-              <th data-col="map">地図</th>
-            </tr>
-          </thead>
-        </table>
-      </div>
-
-      <!-- 本体（スクロール） -->
-      <div class="tablebody-wrap" id="bodyWrap">
-        <table id="tblBody">
-          <colgroup id="colBody"></colgroup>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="scrollhint">※ スマホは横にスクロールできます（園名列は固定）</div>
+          <th data-col="addr" style="min-width:520px;">住所</th>
+          <th data-col="map" style="min-width:130px;">地図</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="scrollhint">※ スマホは横にスクロールできます（園名列とヘッダーは固定）</div>
   </div>
 
   <div class="footer">
@@ -405,117 +366,34 @@ function debounce(fn, ms=250){
   };
 }
 
-/* 表示モード：列の非表示（ヘッダー/本体/colgroup すべてに適用） */
+/* 表示モード：列の非表示（1テーブルなので th/td だけ） */
 const COMPACT_HIDE_COLS = new Set([
   "addr","map",
   "dwait","dacc",
   "a0a","a0w","a1a","a1w","a2a","a2w","a35a","a35w"
 ]);
 function isMobile(){ return window.matchMedia && window.matchMedia("(max-width: 768px)").matches; }
-
-/* colgroup でヘッダーと本体の列幅を揃える（重要） */
-const COLS = [
-  "name","station","walk","accept","wait","dwait","dacc",
-  "a0a","a0w","a1a","a1w","a2a","a2w","a35a","a35w",
-  "addr","map"
-];
-
-/* ★列幅を「ヘッダー/本体で完全一致」させる定義
-   - name: スマホ 120 / PC 240
-   - station: 両方で同じ幅（ズレの温床なので固定）
-   - addr: PC広め（見た目優先、colgroupで一致）
-*/
-function getColWidth(col){
-  const mobile = isMobile();
-  if(col==="name")    return mobile ? 120 : 240;  // ★要望：スマホ120
-  if(col==="station") return 140;                 // ★両方で固定（ズレ防止）
-  if(col==="walk")    return 80;
-  if(col==="accept")  return 90;
-  if(col==="wait")    return 90;
-  if(col==="dwait")   return 100;
-  if(col==="dacc")    return 100;
-
-  if(col==="a0a"||col==="a0w"||col==="a1a"||col==="a1w"||col==="a2a"||col==="a2w"||col==="a35a"||col==="a35w"){
-    return 80;
-  }
-
-  if(col==="addr")    return mobile ? 260 : 520;  // ★住所：PC広め、スマホも最低限
-  if(col==="map")     return 130;
-
-  return 100;
-}
-
-function buildCols(){
-  const head = document.getElementById("colHead");
-  const body = document.getElementById("colBody");
-  head.innerHTML = COLS.map(c=>`<col data-col="${c}" style="width:${getColWidth(c)}px">`).join("");
-  body.innerHTML = COLS.map(c=>`<col data-col="${c}" style="width:${getColWidth(c)}px">`).join("");
-}
-
-/* ★表示モードに合わせて colgroup の col も隠す */
-function applyColVisibility(mode){
-  const hide = (mode === "compact");
-  const cols = document.querySelectorAll('#colHead col, #colBody col');
-  cols.forEach(col=>{
-    const c = col.getAttribute("data-col");
-    if(!c) return;
-    col.classList.toggle("hide-col", hide && COMPACT_HIDE_COLS.has(c));
-  });
-}
-
 function applyViewMode(mode){
   const hide = (mode === "compact");
 
-  // head th
-  document.querySelectorAll("#tblHead thead th").forEach(th=>{
+  // th
+  document.querySelectorAll("#tbl thead th").forEach(th=>{
     const c = th.getAttribute("data-col");
     if(!c) return;
     th.classList.toggle("hide-col", hide && COMPACT_HIDE_COLS.has(c));
   });
 
-  // body td
-  document.querySelectorAll("#tblBody tbody td").forEach(td=>{
+  // td
+  document.querySelectorAll("#tbl tbody td").forEach(td=>{
     const c = td.getAttribute("data-col");
     if(!c) return;
     td.classList.toggle("hide-col", hide && COMPACT_HIDE_COLS.has(c));
   });
 
-  // colgroup col も揃えて隠す（★これで列幅のズレが出にくい）
-  applyColVisibility(mode);
-
   if(mode === "compact"){ setAgeColsVisible(false); }
 }
 
-/* 横スクロール同期（本体→ヘッダー） */
-function syncScroll(){
-  const headWrap = document.getElementById("headWrap");
-  const bodyWrap = document.getElementById("bodyWrap");
-  headWrap.scrollLeft = bodyWrap.scrollLeft;
-}
-
-/* ★縦スクロールバー幅補正（ヘッダー/本体の列ズレ対策の本丸） */
-function updateScrollbarGutter(){
-  const headWrap = document.getElementById("headWrap");
-  const bodyWrap = document.getElementById("bodyWrap");
-  if(!headWrap || !bodyWrap) return;
-
-  const sbw = bodyWrap.offsetWidth - bodyWrap.clientWidth; // scrollbar width
-  document.documentElement.style.setProperty("--sbw", sbw + "px");
-  headWrap.style.paddingRight = sbw + "px";
-}
-
-/* ★列幅は画面幅で変わるので、リサイズ時に colgroup を作り直す */
-function rebuildColsForViewport(){
-  buildCols();
-
-  // col-name の ellipsis は幅に依存するので、見た目の崩れ防止（任意）
-  // （colgroupで制御してるので基本不要だが、念のため）
-}
-
 async function main(){
-  // 初期 colgroup
-  rebuildColsForViewport();
-
   const months = await loadJSON('data/months.json');
   const ms = (months.months||[]).slice().sort();
 
@@ -544,9 +422,6 @@ async function main(){
 
   if(pView && ["compact","full"].includes(pView)) viewSel.value = pView;
   else viewSel.value = "auto";
-
-  // scroll sync
-  document.getElementById("bodyWrap").addEventListener("scroll", syncScroll, { passive:true });
 
   async function render(){
     const month = monthSel.value;
@@ -607,17 +482,12 @@ async function main(){
       `${arr.length.toLocaleString('ja-JP')} / ${totalCount.toLocaleString('ja-JP')}`;
 
     // render body
-    const tbody = document.querySelector('#tblBody tbody');
+    const tbody = document.querySelector('#tbl tbody');
     tbody.innerHTML = arr.map(f => rowHTML(f, prevMap.get(String(f.id)))).join('');
 
-    // view決定
+    // apply view (after body render)
     let view = viewSel.value;
     if(view === "auto"){ view = isMobile() ? "compact" : "full"; }
-
-    // ★viewport依存の列幅があるので、renderのたびにもcolgroupを最新化
-    rebuildColsForViewport();
-
-    // apply view (th/td/colgroup)
     applyViewMode(view);
 
     // URL params
@@ -627,10 +497,6 @@ async function main(){
     setParam('sort', sortEl.value);
     setParam('age', showAgeCols ? "" : "0");
     setParam('view', (viewSel.value === "auto") ? "" : viewSel.value);
-
-    // ★ズレ対策：スクロールバー幅補正を先に → 同期
-    updateScrollbarGutter();
-    syncScroll();
   }
 
   const renderDebounced = debounce(render, 220);
@@ -646,27 +512,10 @@ async function main(){
     render();
   });
 
-  // 画面幅変更：列幅再計算 & スクロールバー幅再計算
-  window.addEventListener("resize", ()=>{
-    rebuildColsForViewport();
-    updateScrollbarGutter();
-    syncScroll();
-  });
-  window.addEventListener("orientationchange", ()=>{
-    rebuildColsForViewport();
-    updateScrollbarGutter();
-    syncScroll();
-  });
-
   if(window.matchMedia){
     const mq = window.matchMedia("(max-width: 768px)");
     mq.addEventListener?.("change", ()=>{
       if(viewSel.value === "auto") render();
-      else{
-        rebuildColsForViewport();
-        updateScrollbarGutter();
-        syncScroll();
-      }
     });
   }
 
