@@ -32,17 +32,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup git identity
+      - name: Setup Git identity
         run: |
           set -euxo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Sync with remote (rebase with autostash)
+      - name: Sync with remote (rebase)
         run: |
           set -euxo pipefail
           git fetch origin main
-          git pull --rebase --autostash origin main
+          git rebase origin/main
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -62,31 +62,20 @@ jobs:
           test -f scripts/apply_master_to_all_months.py
           ls -la scripts
 
-      - name: (One-time) Remove FY2024 month json to avoid kohoku-only leftovers
-        if: ${{ inputs.ward_filter == '' }}
-        run: |
-          set -euxo pipefail
-          # FY2024: 2024-04-01 .. 2025-03-01
-          for m in $(seq 4 12); do
-            f="data/2024-$(printf '%02d' $m)-01.json"
-            if [ -f "$f" ]; then git rm -f "$f"; fi
-          done
-          for m in $(seq 1 3); do
-            f="data/2025-$(printf '%02d' $m)-01.json"
-            if [ -f "$f" ]; then git rm -f "$f"; fi
-          done
-
       - name: Backfill months
         env:
           WARD_FILTER: ${{ inputs.ward_filter }}
           MONTHS_BACK: ${{ inputs.months_back }}
           FORCE_BACKFILL: ${{ inputs.force_backfill }}
+          APPLY_MASTER: "1"
         run: |
           set -euxo pipefail
           python -u scripts/backfill_last_year.py
           ls -la data || true
 
       - name: Apply master (incl kana) to ALL month JSON
+        env:
+          WARD_FILTER: ${{ inputs.ward_filter }}
         run: |
           set -euxo pipefail
           python -u scripts/apply_master_to_all_months.py
@@ -95,7 +84,7 @@ jobs:
         run: |
           set -euxo pipefail
 
-          # 追加/更新/削除を全部拾う（ここが重要）
+          # ★削除(D)も含めてステージするのがポイント
           git add -A data
 
           if [ -z "$(git status --porcelain)" ]; then
@@ -103,8 +92,10 @@ jobs:
             exit 0
           fi
 
-          git commit -m "Backfill months + apply master to all months" || true
+          git commit -m "Backfill months + apply master to all months"
 
+          # 念のため最新に追従（コミット後は作業ツリーがクリーンなので rebase OK）
           git fetch origin main
-          git pull --rebase --autostash origin main
+          git rebase origin/main
+
           git push origin main
