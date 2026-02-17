@@ -84,18 +84,16 @@ jobs:
         run: |
           set -euxo pipefail
 
-          # ★削除(D)も含めてステージするのがポイント
-          git add -A data
-
           if [ -z "$(git status --porcelain)" ]; then
             echo "No changes."
             exit 0
           fi
 
-          git commit -m "Backfill months + apply master to all months"
+          # ★削除も含めてステージ
+          git add -A data
 
-          # 念のため最新に追従（コミット後は作業ツリーがクリーンなので rebase OK）
+          git commit -m "Backfill months + apply master to all months" || true
+
           git fetch origin main
           git rebase origin/main
-
           git push origin main
