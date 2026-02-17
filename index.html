@@ -11,15 +11,14 @@
     .modebar .badge{ margin-left:auto; }
     th.hide-col, td.hide-col, col.hide-col { display:none !important; }
 
-    /* ====== ヘッダー分離型テーブル（確実に表示される） ====== */
+    /* ====== ヘッダー分離型テーブル ====== */
     .table-shell{
       border-radius: 14px;
       border: 1px solid var(--border);
       background: var(--surface);
-      overflow: hidden; /* 角丸維持 */
+      overflow: hidden;
     }
 
-    /* ヘッダー枠（横スクロールだけ同期。スクロールバーは隠す） */
     .tablehead-wrap{
       overflow: auto;
       scrollbar-width: none;
@@ -28,7 +27,6 @@
     }
     .tablehead-wrap::-webkit-scrollbar{ display:none; }
 
-    /* 本体枠（縦横スクロール） */
     .tablebody-wrap{
       overflow: auto;
       -webkit-overflow-scrolling: touch;
@@ -36,7 +34,7 @@
       background: var(--surface);
     }
 
-    /* 2つの table の基本揃え */
+    /* ★ colgroup を確実に効かせる（ズレ対策の核） */
     #tblHead, #tblBody{
       border-collapse: separate;
       border-spacing: 0;
@@ -44,21 +42,22 @@
       min-width: 100%;
       background: var(--surface);
       color: var(--text);
-      table-layout: fixed; /* colgroup 幅を効かせる */
+      table-layout: fixed; /* col の幅を尊重 */
     }
-    #tblHead{ background: transparent; } /* ヘッダー背景は th 側に */
+    #tblHead{ background: transparent; }
 
+    /* ★ col幅の中で省略させる：ここが “幅が合わない” を止める */
     #tblHead th, #tblBody td{
       padding: 10px 12px;
       border-bottom: 1px solid #eef2f7;
       vertical-align: top;
       white-space: nowrap;
-      font-size: 13px;
+
+      /* col幅の中で省略 */
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    /* ヘッダー見た目 */
     #tblHead th{
       background: var(--thead-bg);
       color: var(--thead-text);
@@ -69,10 +68,13 @@
       border-bottom: 1px solid rgba(255,255,255,.15);
     }
 
-    /* 交互行 */
+    #tblBody td{
+      font-size: 13px;
+    }
+
     #tblBody tbody tr:nth-child(even){ background: var(--row-alt); }
 
-    /* ===== 園名列（左固定） ===== */
+    /* ===== 左固定（園名列） ===== */
     :root{ --name-col-w: 260px; } /* JSが PC=260 / SP=120 に更新 */
 
     .col-name{
@@ -96,30 +98,15 @@
       max-width: var(--name-col-w) !important;
     }
 
-    /* 園名セルの省略（行高を増やさない） */
-    #tblBody td.col-name{
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    /* ★ 住所セルの “max-width系” は colgroup と競合するので撤廃して col 幅だけで制御 */
+    /* styles.css の .col-addr .cell-ellipsis { max-width: ... } を上書きして無効化 */
+    #tblBody td.col-addr .cell-ellipsis{
+      max-width: none !important;
+      display: inline;
+      white-space: inherit; /* td が nowrap なので inherit でOK */
     }
 
-    /* 住所列：PCは1行省略 */
-    @media (min-width: 769px){
-      #tblBody td.col-addr .cell-ellipsis{
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: inline-block;
-        max-width: 520px;
-        vertical-align: top;
-      }
-    }
-
-    /* スマホ縦（portrait）で“はまる”調整：
-       - 表は維持
-       - 初期は compact（列を絞る）
-       - 園名120px（要望）
-       - 縦スクロール領域を広めに */
+    /* スマホ縦のハマり */
     @media (max-width: 768px){
       .tablebody-wrap{ max-height: 78vh; }
       .modebar .badge{ width:100%; margin-left:0; }
@@ -133,7 +120,6 @@
       padding: 8px 2px 0 2px;
     }
 
-    /* 年齢列のボタンは compact でも残すが、列表示は制御される */
     button:disabled{ opacity: .55; cursor: not-allowed; }
   </style>
 </head>
@@ -189,7 +175,6 @@
 
   <div class="card">
     <div class="table-shell">
-      <!-- ヘッダー（別テーブル） -->
       <div class="tablehead-wrap" id="headWrap">
         <table id="tblHead">
           <colgroup id="colHead"></colgroup>
@@ -220,7 +205,6 @@
         </table>
       </div>
 
-      <!-- 本体（スクロール） -->
       <div class="tablebody-wrap" id="bodyWrap">
         <table id="tblBody">
           <colgroup id="colBody"></colgroup>
@@ -239,7 +223,7 @@
 
 <script src="common.js"></script>
 <script>
-/* ========= local helpers（未定義事故を潰す） ========= */
+/* ========= local helpers ========= */
 function kataToHira(s){ return (s||"").replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60)); }
 function hiraToKata(s){ return (s||"").replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60)); }
 function normalizeForSearch(s){
@@ -361,11 +345,12 @@ function buildWardOptions(facilities){
   return Array.from(set).sort((a,b)=>a.localeCompare(b,'ja'));
 }
 
-/* ========= 列幅の一元管理（ヘッダー/本体ズレ根絶 + SP縦に最適化） ========= */
+/* ========= colgroup 幅（ズレ修正本体） =========
+   ★最寄り駅と住所はここで固定し、セル側の max-width でいじらない
+*/
 const COL_DEFS = [
-  // key, PC width, SP width（SPは“縦で入る”を優先してやや細め）
-  { key:"name",   wPc:260, wSp:120 },  // ★要望：スマホ120 / PC260
-  { key:"station",wPc:140, wSp:110 },
+  { key:"name",   wPc:260, wSp:120 }, // 要望：スマホ120
+  { key:"station",wPc:160, wSp:120 }, // ★最寄り駅を両方揃える（少し広げる）
   { key:"walk",   wPc:80,  wSp:70  },
 
   { key:"accept", wPc:95,  wSp:85  },
@@ -382,34 +367,32 @@ const COL_DEFS = [
   { key:"a35a",   wPc:90,  wSp:85  },
   { key:"a35w",   wPc:90,  wSp:85  },
 
-  { key:"addr",   wPc:320, wSp:220 },
+  { key:"addr",   wPc:420, wSp:220 }, // ★住所：PC側を明確に固定（ここで合わせる）
   { key:"map",    wPc:140, wSp:120 }
 ];
 
 function setNameColCssVar(px){
   document.documentElement.style.setProperty("--name-col-w", px + "px");
 }
-
 function buildCols(){
   const head = document.getElementById("colHead");
   const body = document.getElementById("colBody");
   const sp = isMobile();
 
-  // 園名列幅（CSSでも固定）
   setNameColCssVar(sp ? 120 : 260);
 
   head.innerHTML = COL_DEFS.map(c=>{
     const w = sp ? c.wSp : c.wPc;
-    return `<col data-col="${c.key}" style="width:${w}px; min-width:${w}px;">`;
+    return `<col data-col="${c.key}" style="width:${w}px; min-width:${w}px; max-width:${w}px;">`;
   }).join("");
 
   body.innerHTML = COL_DEFS.map(c=>{
     const w = sp ? c.wSp : c.wPc;
-    return `<col data-col="${c.key}" style="width:${w}px; min-width:${w}px;">`;
+    return `<col data-col="${c.key}" style="width:${w}px; min-width:${w}px; max-width:${w}px;">`;
   }).join("");
 }
 
-/* ========= 表示モード（SP縦に“はまる”列構成） ========= */
+/* ========= view mode ========= */
 let showAgeCols = true;
 
 function setAgeColsVisible(v){
@@ -417,7 +400,6 @@ function setAgeColsVisible(v){
   document.querySelectorAll('.agecol').forEach(el=>{ el.style.display = v ? '' : 'none'; });
   document.getElementById('toggleCols').textContent = v ? '年齢別列：非表示' : '年齢別列：表示';
 
-  // colgroup も同期（列幅ズレ/余白ズレ防止）
   const ageKeys = new Set(["a0a","a0w","a1a","a1w","a2a","a2w","a35a","a35w"]);
   document.querySelectorAll('#colHead col, #colBody col').forEach(col=>{
     const k = col.getAttribute("data-col");
@@ -429,7 +411,6 @@ function setAgeColsVisible(v){
 }
 
 const COMPACT_HIDE_COLS = new Set([
-  // スマホ縦で「一覧性」を落とすものは隠す（必要ならfullへ）
   "dwait","dacc",
   "addr","map",
   "a0a","a0w","a1a","a1w","a2a","a2w","a35a","a35w"
@@ -438,14 +419,12 @@ const COMPACT_HIDE_COLS = new Set([
 function applyViewMode(mode){
   const compact = (mode === "compact");
 
-  // compact では年齢列を強制OFF（ユーザーのageトグル意図はURLに残すが表示は優先）
   if(compact){
     document.getElementById('toggleCols').disabled = true;
   }else{
     document.getElementById('toggleCols').disabled = false;
   }
 
-  // th/td
   document.querySelectorAll("#tblHead thead th").forEach(th=>{
     const c = th.getAttribute("data-col");
     if(!c) return;
@@ -456,30 +435,27 @@ function applyViewMode(mode){
     if(!c) return;
     td.classList.toggle("hide-col", compact && COMPACT_HIDE_COLS.has(c));
   });
-
-  // colgroup（ヘッダー/本体 両方）
   document.querySelectorAll('#colHead col, #colBody col').forEach(col=>{
     const k = col.getAttribute("data-col");
     if(!k) return;
     col.classList.toggle("hide-col", compact && COMPACT_HIDE_COLS.has(k));
   });
 
-  // 年齢列（compactは常に非表示）
   if(compact){
     setAgeColsVisible(false);
   }else{
-    setAgeColsVisible(showAgeCols); // 現在の状態に戻す
+    setAgeColsVisible(showAgeCols);
   }
 }
 
-/* ========= 横スクロール同期（本体→ヘッダー） ========= */
+/* scroll sync */
 function syncScroll(){
   const headWrap = document.getElementById("headWrap");
   const bodyWrap = document.getElementById("bodyWrap");
   headWrap.scrollLeft = bodyWrap.scrollLeft;
 }
 
-/* ========= 行レンダリング ========= */
+/* row */
 function rowHTML(f, prevF){
   const station = safeStr(f.nearest_station||'');
   const walk = (f.walk_minutes==null || String(f.walk_minutes).trim()==="" ? '—' : `${Number(f.walk_minutes)}分`);
@@ -525,7 +501,6 @@ function rowHTML(f, prevF){
 
 /* ========= main ========= */
 async function main(){
-  // ★最初にcolgroup（PC/SPで幅が違う）
   buildCols();
 
   const months = await loadJSON('data/months.json');
@@ -539,7 +514,6 @@ async function main(){
   const sortEl = document.getElementById('sort');
   const viewSel = document.getElementById('viewMode');
 
-  // restore from URL
   const pMonth = getParam('month');
   const pQ     = getParam('q');
   const pWard  = getParam('ward');
@@ -551,20 +525,16 @@ async function main(){
   if(pQ!=null) qEl.value = pQ;
   if(pSort && Array.from(sortEl.options).some(o=>o.value===pSort)) sortEl.value = pSort;
 
-  // age state (fullで効く)
   showAgeCols = (pAge === "0") ? false : true;
   setAgeColsVisible(showAgeCols);
 
-  // view (auto推奨：SPはcompact)
   if(pView && ["compact","full"].includes(pView)) viewSel.value = pView;
   else viewSel.value = "auto";
 
-  // scroll sync
   document.getElementById("bodyWrap").addEventListener("scroll", syncScroll, { passive:true });
 
   async function render(){
-    // ★renderのたびに現在幅に合わせて col を再構築（回転/アドレスバー伸縮対策）
-    buildCols();
+    buildCols(); // ★回転/PCリサイズで再構築してズレ防止
 
     const month = monthSel.value;
     const idx = ms.indexOf(month);
@@ -583,7 +553,6 @@ async function main(){
       }
     }
 
-    // ward dropdown
     const wards = buildWardOptions(data.facilities||[]);
     const curWard = (pWard ?? wardSel.value) || "";
     wardSel.innerHTML =
@@ -591,7 +560,6 @@ async function main(){
       wards.map(w=>`<option value="${w}">${w}</option>`).join('');
     wardSel.value = wards.includes(curWard) ? curWard : "";
 
-    // KPI（全体）
     const totWait = (data.facilities||[]).reduce((s,f)=>s+Number(f.totals?.wait||0),0);
     const totAcc  = (data.facilities||[]).reduce((s,f)=>s+Number(f.totals?.accept||0),0);
     const prevTotWait = prevData ? (prevData.facilities||[]).reduce((s,f)=>s+Number(f.totals?.wait||0),0) : null;
@@ -605,7 +573,6 @@ async function main(){
       <div class="pill">対象：${safeStr(data.ward||"横浜市")}</div>
     `;
 
-    // filter + sort
     const q = qEl.value.trim();
     const sort = sortEl.value;
     const wardFilter = wardSel.value;
@@ -624,17 +591,12 @@ async function main(){
     document.getElementById('countLabel').textContent =
       `${arr.length.toLocaleString('ja-JP')} / ${totalCount.toLocaleString('ja-JP')}`;
 
-    // render body
     const tbody = document.querySelector('#tblBody tbody');
     tbody.innerHTML = arr.map(f => rowHTML(f, prevMap.get(String(f.id)))).join('');
 
-    // view apply（SP縦は auto→compact）
     let view = viewSel.value;
     if(view === "auto"){ view = isMobile() ? "compact" : "full"; }
     applyViewMode(view);
-
-    // age（full時だけ見えるが、URLはユーザー状態を保持）
-    setAgeColsVisible(showAgeCols);
 
     // URL params
     setParam('month', monthSel.value);
@@ -644,7 +606,6 @@ async function main(){
     setParam('age', showAgeCols ? "" : "0");
     setParam('view', (viewSel.value === "auto") ? "" : viewSel.value);
 
-    // scroll sync reset
     syncScroll();
   }
 
@@ -657,21 +618,15 @@ async function main(){
   viewSel.addEventListener('change', render);
 
   document.getElementById('toggleCols').addEventListener('click', ()=>{
-    // compact中は無効化（applyViewModeでdisabledにしてるが念のため）
     if(document.getElementById('toggleCols').disabled) return;
     showAgeCols = !showAgeCols;
     setAgeColsVisible(showAgeCols);
     render();
   });
 
-  // 回転/幅変更に追従（ここがスマホ縦に“はまる”肝）
   if(window.matchMedia){
     const mq = window.matchMedia("(max-width: 768px)");
-    mq.addEventListener?.("change", ()=>{
-      buildCols();                 // ★先にcolを作り直す（ヘッダー/本体ズレ防止）
-      if(viewSel.value === "auto") render();
-      else render();               // manualでも幅は変わるので再描画
-    });
+    mq.addEventListener?.("change", ()=>{ render(); });
   }
   window.addEventListener("orientationchange", ()=>{ render(); });
 
