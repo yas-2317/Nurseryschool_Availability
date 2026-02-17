@@ -1,4 +1,4 @@
-name: Backfill nursery data (months) + apply master to all months
+name: Backfill
 
 on:
   workflow_dispatch:
@@ -32,11 +32,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Sync with remote (rebase)
+      - name: Setup git identity
         run: |
           set -euxo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync with remote (rebase)
+        run: |
+          set -euxo pipefail
           git fetch origin main
           git rebase origin/main
 
@@ -85,14 +89,17 @@ jobs:
         run: |
           set -euxo pipefail
 
+          # 念のため最新に追従（コンフリクトやunstagedで止まるのを防ぐ）
+          git fetch origin main
+          git rebase origin/main
+
           if [ -z "$(git status --porcelain)" ]; then
             echo "No changes."
             exit 0
           fi
 
-          git add data/*.json data/months.json data/master_facilities.csv || true
-          git commit -m "Backfill months + apply master to all months" || true
+          # ★重要：削除も含めて data 配下を全部ステージ
+          git add -A data
 
-          git fetch origin main
-          git rebase origin/main
+          git commit -m "Backfill months + apply master to all months" || true
           git push origin main
