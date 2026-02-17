@@ -1,66 +1,84 @@
 // common.js
 
 function safeStr(x){
-  return (x === null || x === undefined) ? '' : String(x);
+  return (x==null) ? "" : String(x);
 }
 
 function fmt(x){
-  if(x === null || x === undefined || x === '') return '—';
+  if(x==null) return "—";
   const n = Number(x);
-  if(Number.isNaN(n)) return safeStr(x);
+  if(!isFinite(n)) return "—";
   return n.toLocaleString('ja-JP');
 }
 
-function getParam(key){
-  const u = new URL(location.href);
-  return u.searchParams.get(key);
+function fmtNum(n){
+  const x = Number(n);
+  if(!isFinite(x)) return "—";
+  return x.toLocaleString('ja-JP');
+}
+
+function toIntOrNull(x){
+  if(x==null) return null;
+  const s = String(x).trim();
+  if(!s || s.toLowerCase()==='null' || s==='-') return null;
+  const n = Number(s);
+  if(!isFinite(n)) return null;
+  return Math.trunc(n);
 }
 
 async function loadJSON(path){
-  // path is relative to current page (index.html/facility.html are same dir)
-  const url = new URL(path, location.href);
-  const r = await fetch(url.toString(), { cache: 'no-store' });
-  if(!r.ok){
-    throw new Error(`Failed to load ${path}`);
-  }
+  const r = await fetch(path, {cache: "no-store"});
+  if(!r.ok) throw new Error(`Failed to load ${path}`);
   return await r.json();
 }
 
-/* ===========================
-   Kana normalization for search
-   - Convert Katakana -> Hiragana
-   - Normalize spaces
-   =========================== */
-
-function kataToHira(s){
-  let out = '';
-  for(const ch of safeStr(s)){
-    const code = ch.charCodeAt(0);
-    if(code >= 0x30A1 && code <= 0x30F6){
-      out += String.fromCharCode(code - 0x60);
-    }else{
-      out += ch;
-    }
-  }
-  return out;
+// ---- kana helpers ----
+function toHira(s){
+  // カタカナ→ひらがな
+  return (s||"").replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+}
+function toKata(s){
+  // ひらがな→カタカナ
+  return (s||"").replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
 }
 
+// normalize for search (lowercase, trim, remove spaces, normalize kana)
 function normalizeForSearch(s){
-  // keep kanji as-is, but normalize kana & spaces
-  let x = safeStr(s);
-  x = x.replace(/　/g, ' ');
-  x = x.replace(/\s+/g, ' ').trim();
-  x = kataToHira(x);
-  // remove spaces for easier includes matching
-  x = x.replace(/\s+/g, '');
-  return x.toLowerCase();
+  let x = safeStr(s).toLowerCase();
+  x = x.replace(/\s+/g,'').trim();
+  // unify long vowel / small kana variations lightly
+  x = x.replace(/ー/g,'');
+  // keep original; caller may pass hira/kata conversions too
+  return x;
 }
 
-function pickStationKey(f){
-  // prefer kana for sorting
-  const sk = safeStr(f.station_kana).trim();
-  if(sk) return normalizeForSearch(sk);
-  const ns = safeStr(f.nearest_station).replace(/駅/g,'').trim();
-  if(ns) return normalizeForSearch(ns);
-  return '~~~~'; // nulls go last
+// ---- URL params ----
+function getParam(key){
+  try{
+    const u = new URL(location.href);
+    return u.searchParams.get(key);
+  }catch(e){
+    return null;
+  }
+}
+
+function setParam(key, value){
+  const v = safeStr(value).trim();
+  const u = new URL(location.href);
+  if(!v){
+    u.searchParams.delete(key);
+  } else {
+    u.searchParams.set(key, v);
+  }
+  history.replaceState(null, "", u.toString());
+}
+
+// ---- toast ----
+function toast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.opacity = '0.0'; t.style.transition = 'opacity .2s'; }, 1200);
+  setTimeout(()=>{ t.remove(); }, 1500);
 }
