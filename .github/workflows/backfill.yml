@@ -38,6 +38,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      # ★重要：rebase する前に「作業ツリーが汚れていたら退避」して確実に止まらないようにする
+      - name: Pre-rebase safety (stash if dirty)
+        run: |
+          set -euxo pipefail
+          if [ -n "$(git status --porcelain)" ]; then
+            git stash push -u -m "pre-rebase safety stash"
+          fi
+
       - name: Sync with remote (rebase)
         run: |
           set -euxo pipefail
@@ -89,17 +97,20 @@ jobs:
         run: |
           set -euxo pipefail
 
-          # 念のため最新に追従（コンフリクトやunstagedで止まるのを防ぐ）
+          # ここでリモート追従（この時点では「未ステージ差分がある」前提なので rebase しない）
           git fetch origin main
-          git rebase origin/main
 
           if [ -z "$(git status --porcelain)" ]; then
             echo "No changes."
             exit 0
           fi
 
-          # ★重要：削除も含めて data 配下を全部ステージ
+          # ★削除も含めて data をまるごとステージ
           git add -A data
 
           git commit -m "Backfill months + apply master to all months" || true
+
+          # commit 後なら rebase 可能（作業ツリーはクリーン）
+          git rebase origin/main
+
           git push origin main
