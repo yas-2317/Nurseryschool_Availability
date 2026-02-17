@@ -20,7 +20,7 @@
         </div>
       </div>
       <div class="header-right">
-        <a class="btn-link" href="index.html">← 一覧へ戻る</a>
+        <a class="btn-link" id="backLink" href="index.html">← 一覧へ戻る</a>
       </div>
     </div>
   </div>
@@ -28,6 +28,7 @@
 
 <main class="container">
 
+  <!-- Summary (カード化) -->
   <div class="card facility-hero">
     <div class="hero-grid">
       <div class="hero-main">
@@ -51,9 +52,9 @@
             <a id="sameStationLink" class="btn-link" href="#" style="display:none;">同駅の園を見る</a>
           </div>
 
-          <!-- ★追加：園HP -->
+          <!-- ★追加：園の公式サイト -->
           <div class="hero-line">
-            <span class="label">園HP</span>
+            <span class="label">公式</span>
             <span id="facWeb" class="value">—</span>
           </div>
         </div>
@@ -74,6 +75,7 @@
         <div class="chips" id="ageChips"></div>
       </div>
 
+      <!-- Sparkline -->
       <div class="hero-side">
         <div class="small">推移（直近）</div>
         <div class="spark-block">
@@ -88,6 +90,7 @@
     </div>
   </div>
 
+  <!-- Compact history -->
   <div class="card">
     <div class="section-head">
       <div>
@@ -211,17 +214,65 @@ function makeSparkline(values, {width=260, height=60}={}){
   </svg>`;
 }
 
+// index の状態を保持して URL を作る（存在するものだけ引き継ぐ）
+function carryIndexState(baseUrl){
+  const u = new URL(window.location.href);
+  const keys = ["month","q","ward","sort","age"];
+  const params = new URLSearchParams();
+  for(const k of keys){
+    const v = u.searchParams.get(k);
+    if(v!=null && String(v).trim()!==""){
+      params.set(k, v);
+    }
+  }
+  const qs = params.toString();
+  return qs ? `${baseUrl}?${qs}` : baseUrl;
+}
+
+function buildIndexURLWithOverrides(overrides={}){
+  const u = new URL(window.location.href);
+  const keys = ["month","q","ward","sort","age"];
+  const params = new URLSearchParams();
+  for(const k of keys){
+    const v = u.searchParams.get(k);
+    if(v!=null && String(v).trim()!==""){
+      params.set(k, v);
+    }
+  }
+  for(const [k,v] of Object.entries(overrides)){
+    if(v==null || String(v).trim()===""){
+      params.delete(k);
+    }else{
+      params.set(k, String(v));
+    }
+  }
+  const qs = params.toString();
+  return qs ? `index.html?${qs}` : "index.html";
+}
+
+function normalizeWebsiteUrl(url){
+  const s = safeStr(url).trim();
+  if(!s) return "";
+  if(/^https?:\/\//i.test(s)) return s;
+  // たまに "www.xxx" 等だけ入ることがあるので補正
+  return "https://" + s;
+}
+
 async function main(){
   const fid = getParam('id');
   if(!fid){
     alert('id が指定されていません');
-    location.href = 'index.html';
+    location.href = buildIndexURLWithOverrides({});
     return;
   }
+
+  // ★一覧へ戻るリンク（index の状態を保持）
+  document.getElementById('backLink').href = buildIndexURLWithOverrides({});
 
   const monthsObj = await loadJSON('data/months.json');
   const months = (monthsObj.months||[]).slice().sort(); // asc
 
+  // load all months, pick facility
   const hist = [];
   for(const m of months){
     try{
@@ -231,26 +282,29 @@ async function main(){
         hist.push({month:m, fac});
       }
     }catch(e){
-      // ignore
+      // ignore missing
     }
   }
   if(hist.length===0){
     alert('該当施設が見つかりません');
-    location.href = 'index.html';
+    location.href = buildIndexURLWithOverrides({});
     return;
   }
 
+  // latest & prev
   const latest = hist[hist.length-1];
   const prev = hist.length>=2 ? hist[hist.length-2] : null;
 
   const f = latest.fac;
   const pf = prev ? prev.fac : null;
 
+  // title
   document.title = `${safeStr(f.name)}（園詳細）`;
   document.getElementById('facName').textContent = safeStr(f.name);
   document.getElementById('facId').textContent = safeStr(f.id);
   document.getElementById('latestMonth').textContent = latest.month;
 
+  // address/map/station/walk
   const addr = safeStr(f.address || '');
   document.getElementById('facAddr').textContent = addr || '—';
 
@@ -262,28 +316,55 @@ async function main(){
   document.getElementById('facStation').textContent = st || '—';
   document.getElementById('facWalk').textContent = (wk==null ? '—' : `徒歩 ${wk}分`);
 
-  // ★園HP
-  const web = safeStr(f.website || '');
-  document.getElementById('facWeb').innerHTML = web ? `<a href="${web}" target="_blank" rel="noopener">公式サイトを開く</a>` : '—';
+  // ★追加：公式サイト
+  const web = normalizeWebsiteUrl(f.website || "");
+  document.getElementById('facWeb').innerHTML = web
+    ? `<a href="${web}" target="_blank" rel="noopener">園の公式サイトを開く</a>`
+    : '—';
 
-  // same station link
+  // same station link（index状態保持 + 駅検索に上書き）
   const stationQuery = (safeStr(f.station_kana).trim() || safeStr(f.nearest_station).replace(/駅$/,'').trim());
   if(stationQuery){
-    const url = `index.html?q=${encodeURIComponent(stationQuery)}&sort=station_walk_asc`;
+    const url = buildIndexURLWithOverrides({
+      q: stationQuery,
+      sort: "station_walk_asc",
+    });
     const a = document.getElementById('sameStationLink');
     a.href = url;
     a.style.display = '';
   }
 
-  document.getElementById('copyAddr').addEventListener('click', async ()=>{
+  // copy address（toast無しでも落ちない）
+  const copyBtn = document.getElementById('copyAddr');
+  copyBtn.addEventListener('click', async ()=>{
+    if(!addr){
+      alert('住所がありません');
+      return;
+    }
     try{
       await navigator.clipboard.writeText(addr);
-      toast('住所をコピーしました');
+      const old = copyBtn.textContent;
+      copyBtn.textContent = 'コピーしました';
+      setTimeout(()=>{ copyBtn.textContent = old; }, 1200);
     }catch(e){
-      alert('コピーに失敗しました');
+      // clipboard不可環境のフォールバック
+      try{
+        const ta = document.createElement('textarea');
+        ta.value = addr;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        const old = copyBtn.textContent;
+        copyBtn.textContent = 'コピーしました';
+        setTimeout(()=>{ copyBtn.textContent = old; }, 1200);
+      }catch(e2){
+        alert('コピーに失敗しました');
+      }
     }
   });
 
+  // latest totals & deltas
   const wait = Number(f.totals?.wait ?? 0);
   const acc  = Number(f.totals?.accept ?? 0);
   const dWait = pf ? (Number(f.totals?.wait||0) - Number(pf.totals?.wait||0)) : null;
@@ -294,6 +375,7 @@ async function main(){
   document.getElementById('latestWaitDelta').innerHTML = signDelta(dWait);
   document.getElementById('latestAccDelta').innerHTML  = signDelta(dAcc);
 
+  // age chips (latest)
   const g = getGroups(f);
   function chip(label, a, w){
     const aa = fmt(a);
@@ -307,18 +389,21 @@ async function main(){
     ${chip('3〜5歳', g?.['3-5']?.accept, g?.['3-5']?.wait)}
   `;
 
+  // sparkline from last N
   const lastN = hist.slice(Math.max(0, hist.length-24));
   const waitSeries = lastN.map(x => Number(x.fac.totals?.wait ?? 0));
   const accSeries  = lastN.map(x => Number(x.fac.totals?.accept ?? 0));
   document.getElementById('sparkWait').innerHTML = makeSparkline(waitSeries);
   document.getElementById('sparkAcc').innerHTML  = makeSparkline(accSeries);
 
+  // history tables
   const limitSel = document.getElementById('limitSel');
 
   function renderTables(){
     const lim = Number(limitSel.value || 24);
     const slice = (lim>=999) ? hist : hist.slice(Math.max(0, hist.length - lim));
 
+    // compact table (with deltas)
     const rows = [];
     for(let i=0;i<slice.length;i++){
       const cur = slice[i];
@@ -336,8 +421,9 @@ async function main(){
         <td>${signDelta(da)}</td>
       </tr>`);
     }
-    document.querySelector('#hist tbody').innerHTML = rows.reverse().join('');
+    document.querySelector('#hist tbody').innerHTML = rows.reverse().join(''); // latest on top
 
+    // age history (latest on top)
     const rows2 = slice.map(cur=>{
       const gg = getGroups(cur.fac);
       function n(v){ return fmt(v); }
