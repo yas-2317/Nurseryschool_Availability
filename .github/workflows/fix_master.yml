@@ -81,40 +81,24 @@ jobs:
           WIPE: ${{ inputs.wipe_station_cache }}
         run: |
           set -euxo pipefail
-          mkdir -p data
           if [ "$WIPE" = "1" ]; then
             rm -f data/stations_cache_yokohama.json
             rm -f data/station_misses.csv
           fi
           ls -la data || true
 
-      - name: Expand master from existing month JSONs (Yokohama-wide)
-        env:
-          WARD_FILTER: ${{ inputs.ward_filter }}   # 空なら全域、港北区なら港北区だけ
-        run: |
-          set -euxo pipefail
-          test -f scripts/expand_master_from_months.py
-          python -u scripts/expand_master_from_months.py
-          echo "---- master head ----"
-          head -n 5 data/master_facilities.csv
-
-      # 1) master_facilities.csv を Google で更新（ここだけ ward_filter を使う）
       - name: Fix master_facilities.csv (Google)
         env:
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
-
           CITY_FILTER: ${{ inputs.city_filter }}
           WARD_FILTER: ${{ inputs.ward_filter }}
-
           MAX_UPDATES: ${{ inputs.max_updates }}
           ONLY_BAD_ROWS: ${{ inputs.only_bad_rows }}
           STRICT_ADDRESS_CHECK: ${{ inputs.strict_address_check }}
           GOOGLE_API_SLEEP_SEC: ${{ inputs.sleep_sec }}
-
           FILL_NEAREST_STATION: "1"
           OVERWRITE_NEAREST_STATION: ${{ inputs.overwrite_station_walk }}
           OVERWRITE_WALK_MINUTES: ${{ inputs.overwrite_station_walk }}
-
           NEARBY_RADIUS_M: ${{ inputs.nearby_radius_m }}
           FORCE_REBUILD_STATIONS: "0"
         run: |
@@ -123,8 +107,8 @@ jobs:
           python -u scripts/fix_master_with_google_places.py
           ls -la data || true
 
-      # 2) 全月JSONへ master を注入：HPで全区の駅/徒歩が出るように “常に全域”
-      - name: Apply master to ALL month JSONs (always all wards)
+      - name: Apply master to ALL month JSONs (ALWAYS city-wide so HP reflects everywhere)
+        # ★ここが肝：WARD_FILTER を渡さない（=空欄/全域）
         env:
           WARD_FILTER: ""
         run: |
@@ -133,10 +117,9 @@ jobs:
           python -u scripts/apply_master_to_all_months.py
           ls -la data || true
 
-      # 3) 最新月JSONの作り直し：これも “常に全域”
-      - name: Rebuild latest month JSON (always all wards)
+      - name: Rebuild latest month JSON (refresh latest month from city dataset)
         env:
-          WARD_FILTER: ""
+          WARD_FILTER: ${{ inputs.ward_filter }}
         run: |
           set -euxo pipefail
           test -f scripts/update_from_yokohama.py
@@ -153,6 +136,7 @@ jobs:
           fi
 
           git add data || true
+          git add scripts/apply_master_to_all_months.py || true
           git commit -m "Fix master + apply to all months + rebuild latest" || true
 
           git fetch origin main
