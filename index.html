@@ -361,13 +361,12 @@ function debounce(fn, ms=250){
  */
 const COMPACT_HIDE_COLS = new Set([
   "addr","map",
-  "dwait","dacc",
   "ward",
   "a0a","a0w","a1a","a1w","a2a","a2w","a35a","a35w"
 ]);
 
 function isMobile(){
-  return window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+  return window.matchMedia && window.matchMedia("(max-width: 820px)").matches;
 }
 
 function applyViewModeToTable(mode){
