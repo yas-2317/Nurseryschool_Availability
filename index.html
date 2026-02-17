@@ -77,13 +77,13 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 520px;  /* ★長すぎるなら 420 くらいに */
+        max-width: 300px;  /* ★長すぎるなら 420 くらいに */
       }
     }
 
     /* スマホ：園名列を細くして “園名以外” が見えるように */
     @media (max-width: 768px){
-      #tbl th.col-name{ min-width: 165px; }
+      #tbl th.col-name{ min-width: 100px; }
       #tbl td.col-name{ min-width: 165px; max-width: 190px; }
 
       /* 横スクロール前提（表は維持） */
