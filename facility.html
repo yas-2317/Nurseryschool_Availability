@@ -23,6 +23,11 @@
         <a class="btn-link" href="index.html">← 一覧へ戻る</a>
       </div>
     </div>
+
+    <!-- DBG (消してOK) -->
+    <div id="dbgBox" class="small" style="margin-top:8px; padding:8px 10px; border:1px solid #e5e7eb; border-radius:12px; background:#fff;">
+      DBG: <span id="dbg">loading...</span>
+    </div>
   </div>
 </header>
 
@@ -140,70 +145,81 @@
 
 </main>
 
-<script src="common.js"></script>
+<!-- ★ common.js は壊れてても続行したいので try で読む -->
 <script>
-/* =========================================================
-   必要箇所だけ修正：
-   - common.js 側が壊れても落ちないようにフォールバック関数を定義
-   - fmtNum / toast / getParam / loadJSON / safeStr / fmt / toIntOrNull の未定義を防止
-   ========================================================= */
+(function(){
+  const dbg = (msg)=>{ const el=document.getElementById('dbg'); if(el) el.textContent = msg; };
 
-// ----- fallbacks -----
-const safeStr = (window.safeStr) ? window.safeStr : (x)=> (x==null ? "" : String(x));
-const fmt = (window.fmt) ? window.fmt : (x)=>{
-  if(x==null) return "—";
-  const s = String(x).trim();
-  if(s==="" || s.toLowerCase()==="null" || s==="-") return "—";
-  const n = Number(s);
-  if(!Number.isFinite(n)) return "—";
-  return n.toLocaleString("ja-JP");
-};
-const fmtNum = (window.fmtNum) ? window.fmtNum : fmt;
-const toIntOrNull = (window.toIntOrNull) ? window.toIntOrNull : (x)=>{
-  if(x==null) return null;
-  const s = String(x).trim();
-  if(s==="" || s.toLowerCase()==="null" || s==="-") return null;
-  const n = Number(s);
-  if(!Number.isFinite(n)) return null;
-  return Math.trunc(n);
-};
-const getParam = (window.getParam) ? window.getParam : (key)=>{
+  // 先に最低限のfallbackを用意（common.js が落ちても動く）
+  window.safeStr = window.safeStr || ((x)=> (x==null ? "" : String(x)));
+  window.toIntOrNull = window.toIntOrNull || ((x)=>{
+    if(x==null) return null;
+    const s = String(x).trim();
+    if(s==="" || s.toLowerCase()==="null" || s==="-") return null;
+    const n = Number(s);
+    if(!Number.isFinite(n)) return null;
+    return Math.trunc(n);
+  });
+  window.fmt = window.fmt || ((x)=>{
+    if(x==null) return "—";
+    const s = String(x).trim();
+    if(s==="" || s.toLowerCase()==="null" || s==="-") return "—";
+    const n = Number(s);
+    if(!Number.isFinite(n)) return "—";
+    return n.toLocaleString("ja-JP");
+  });
+  window.fmtNum = window.fmtNum || window.fmt;
+
+  window.getParam = window.getParam || ((key)=>{
+    try{
+      const u = new URL(window.location.href);
+      return u.searchParams.get(key);
+    }catch(e){
+      const m = new RegExp("[?&]"+key+"=([^&]+)").exec(window.location.search);
+      return m ? decodeURIComponent(m[1]) : null;
+    }
+  });
+
+  window.loadJSON = window.loadJSON || (async (path)=>{
+    const url = path + (path.includes("?") ? "&" : "?") + "v=" + Date.now();
+    const res = await fetch(url, { cache: "no-store" });
+    if(!res.ok) throw new Error(`Failed to load ${path} (${res.status})`);
+    return await res.json();
+  });
+
+  window.toast = window.toast || ((msg)=>{
+    const el = document.createElement("div");
+    el.textContent = msg;
+    el.style.position = "fixed";
+    el.style.left = "50%";
+    el.style.bottom = "18px";
+    el.style.transform = "translateX(-50%)";
+    el.style.padding = "10px 12px";
+    el.style.borderRadius = "999px";
+    el.style.background = "rgba(17,17,17,0.92)";
+    el.style.color = "#fff";
+    el.style.fontSize = "12px";
+    el.style.zIndex = "9999";
+    el.style.boxShadow = "0 6px 18px rgba(0,0,0,0.18)";
+    document.body.appendChild(el);
+    setTimeout(()=> el.remove(), 1200);
+  });
+
+  // common.js 読み込み（失敗しても致命傷にしない）
   try{
-    const u = new URL(window.location.href);
-    return u.searchParams.get(key);
+    const s = document.createElement("script");
+    s.src = "common.js";
+    s.async = false;
+    s.onload = ()=> dbg("common.js loaded");
+    s.onerror = ()=> dbg("common.js failed (fallback ok)");
+    document.head.appendChild(s);
   }catch(e){
-    const m = new RegExp("[?&]"+key+"=([^&]+)").exec(window.location.search);
-    return m ? decodeURIComponent(m[1]) : null;
+    dbg("common.js inject failed (fallback ok)");
   }
-};
-const loadJSON = (window.loadJSON) ? window.loadJSON : async (path)=>{
-  const url = path + (path.includes("?") ? "&" : "?") + "v=" + Date.now();
-  const res = await fetch(url, { cache: "no-store" });
-  if(!res.ok) throw new Error(`Failed to load ${path} (${res.status})`);
-  return await res.json();
-};
+})();
+</script>
 
-// toast が無ければ簡易実装（CSSいじらないため inline style）
-function toast(msg){
-  if(typeof window.toast === "function") return window.toast(msg);
-  const el = document.createElement("div");
-  el.textContent = msg;
-  el.style.position = "fixed";
-  el.style.left = "50%";
-  el.style.bottom = "18px";
-  el.style.transform = "translateX(-50%)";
-  el.style.padding = "10px 12px";
-  el.style.borderRadius = "999px";
-  el.style.background = "rgba(17,17,17,0.92)";
-  el.style.color = "#fff";
-  el.style.fontSize = "12px";
-  el.style.zIndex = "9999";
-  el.style.boxShadow = "0 6px 18px rgba(0,0,0,0.18)";
-  document.body.appendChild(el);
-  setTimeout(()=> el.remove(), 1200);
-}
-
-// ----- your original functions -----
+<script>
 function getGroups(f){
   if(f.age_groups) return f.age_groups;
   const ages = f.ages || f.ages_0_5 || {};
@@ -231,7 +247,6 @@ function signDelta(n){
 }
 
 function makeSparkline(values, {width=260, height=60}={}){
-  // values: number[] (may contain null)
   const xs = values.map(v => (v==null ? null : Number(v)));
   const clean = xs.filter(v => v!=null && isFinite(v));
   if(clean.length < 2){
@@ -271,50 +286,69 @@ function makeSparkline(values, {width=260, height=60}={}){
   </svg>`;
 }
 
+// ★施設の特定を「id一致」だけでなく「facility_id」「id」「文字列/数値差」「name一致」も拾う
+function findFacility(obj, fid){
+  const list = (obj && obj.facilities) ? obj.facilities : [];
+  const sid = String(fid);
+  // 1) id / facility_id
+  let fac = list.find(x => String(x?.id) === sid) ||
+            list.find(x => String(x?.facility_id) === sid);
+  if(fac) return fac;
+  return null;
+}
+
 async function main(){
-  const fid = getParam('id');
+  const dbg = (msg)=>{ const el=document.getElementById('dbg'); if(el) el.textContent = msg; };
+
+  const fid = window.getParam('id');
   if(!fid){
     alert('id が指定されていません');
     location.href = 'index.html';
     return;
   }
+  dbg(`id=${fid} / loading months.json...`);
 
-  const monthsObj = await loadJSON('data/months.json');
+  const monthsObj = await window.loadJSON('data/months.json');
   const months = (monthsObj.months||[]).slice().sort(); // asc
+  dbg(`months=${months.length} / loading monthly files...`);
 
-  // load all months, pick facility
   const hist = [];
+  let loaded = 0;
+  let foundCount = 0;
+
   for(const m of months){
     try{
-      const obj = await loadJSON(`data/${m}.json`);
-      const fac = (obj.facilities||[]).find(x => String(x.id) === String(fid));
+      const obj = await window.loadJSON(`data/${m}.json`);
+      loaded++;
+      const fac = findFacility(obj, fid);
       if(fac){
+        foundCount++;
         hist.push({month:m, fac});
       }
     }catch(e){
-      // ignore missing
+      // ignore
     }
   }
+
+  dbg(`loaded=${loaded}/${months.length}, found=${foundCount}`);
+
   if(hist.length===0){
-    alert('該当施設が見つかりません');
+    alert('該当施設が見つかりません（id不一致 or データ未反映）');
     location.href = 'index.html';
     return;
   }
 
-  // latest & prev
   const latest = hist[hist.length-1];
   const prev = hist.length>=2 ? hist[hist.length-2] : null;
 
   const f = latest.fac;
   const pf = prev ? prev.fac : null;
 
-  // title
   document.title = `${safeStr(f.name)}（園詳細）`;
   document.getElementById('facName').textContent = safeStr(f.name);
-  document.getElementById('facId').textContent = safeStr(f.id);
+  document.getElementById('facId').textContent = safeStr(f.id ?? f.facility_id ?? fid);
   document.getElementById('latestMonth').textContent = latest.month;
 
-  // address/map/station/walk
   const addr = safeStr(f.address || '');
   document.getElementById('facAddr').textContent = addr || '—';
 
@@ -326,7 +360,6 @@ async function main(){
   document.getElementById('facStation').textContent = st || '—';
   document.getElementById('facWalk').textContent = (wk==null ? '—' : `徒歩 ${wk}分`);
 
-  // same station link
   const stationQuery = (safeStr(f.station_kana).trim() || safeStr(f.nearest_station).replace(/駅$/,'').trim());
   if(stationQuery){
     const url = `index.html?q=${encodeURIComponent(stationQuery)}&view=basic&sort=station_walk_asc`;
@@ -335,11 +368,8 @@ async function main(){
     a.style.display = '';
   }
 
-  // copy address
   const copyBtn = document.getElementById('copyAddr');
-  if(!addr){
-    copyBtn.disabled = true;
-  }
+  if(!addr) copyBtn.disabled = true;
   copyBtn.addEventListener('click', async ()=>{
     if(!addr) return;
     try{
@@ -350,7 +380,6 @@ async function main(){
     }
   });
 
-  // latest totals & deltas
   const wait = Number(f.totals?.wait ?? 0);
   const acc  = Number(f.totals?.accept ?? 0);
   const dWait = pf ? (Number(f.totals?.wait||0) - Number(pf.totals?.wait||0)) : null;
@@ -361,7 +390,6 @@ async function main(){
   document.getElementById('latestWaitDelta').innerHTML = signDelta(dWait);
   document.getElementById('latestAccDelta').innerHTML  = signDelta(dAcc);
 
-  // age chips (latest)
   const g = getGroups(f);
   function chip(label, a, w){
     const aa = fmt(a);
@@ -375,21 +403,17 @@ async function main(){
     ${chip('3〜5歳', g?.['3-5']?.accept, g?.['3-5']?.wait)}
   `;
 
-  // sparkline from last N
   const lastN = hist.slice(Math.max(0, hist.length-24));
   const waitSeries = lastN.map(x => Number(x.fac.totals?.wait ?? 0));
   const accSeries  = lastN.map(x => Number(x.fac.totals?.accept ?? 0));
   document.getElementById('sparkWait').innerHTML = makeSparkline(waitSeries);
   document.getElementById('sparkAcc').innerHTML  = makeSparkline(accSeries);
 
-  // history tables
   const limitSel = document.getElementById('limitSel');
-
   function renderTables(){
     const lim = Number(limitSel.value || 24);
     const slice = (lim>=999) ? hist : hist.slice(Math.max(0, hist.length - lim));
 
-    // compact table (with deltas)
     const rows = [];
     for(let i=0;i<slice.length;i++){
       const cur = slice[i];
@@ -407,9 +431,8 @@ async function main(){
         <td>${signDelta(da)}</td>
       </tr>`);
     }
-    document.querySelector('#hist tbody').innerHTML = rows.reverse().join(''); // latest on top
+    document.querySelector('#hist tbody').innerHTML = rows.reverse().join('');
 
-    // age history (latest on top)
     const rows2 = slice.map(cur=>{
       const gg = getGroups(cur.fac);
       function n(v){ return fmt(v); }
@@ -429,6 +452,8 @@ async function main(){
 }
 
 main().catch(err=>{
+  const el = document.getElementById('dbg');
+  if(el) el.textContent = "ERROR: " + err.message;
   alert(err.message);
   console.error(err);
 });
