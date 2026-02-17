@@ -86,6 +86,20 @@
       z-index: 10;
       box-shadow: 1px 0 0 rgba(255,255,255,.15);
     }
+    /* ★園名列だけ「col + th/td」二重固定でズレ根絶 */
+    #tblHead th.col-name,
+    #tblBody td.col-name{
+      width: 260px !important;
+      min-width: 260px !important;
+      max-width: 260px !important;
+    }
+    
+    /* 省略表示（既に入ってるなら不要だけど、念のため） */
+    #tblBody td.col-name{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
     /* 園名セルの省略（行高を増やさない） */
     #tblBody td.col-name{
