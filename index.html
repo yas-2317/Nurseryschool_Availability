@@ -9,97 +9,115 @@
   <style>
     .modebar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
     .modebar .badge{ margin-left:auto; }
-    th.hide-col, td.hide-col { display:none !important; }
 
-    /* ===== 1テーブル + 行列ヘッダー固定（sticky） ===== */
+    /* JSが th/td に .hide-col を付ける：必ず勝たせる（重要） */
+    #tbl th.hide-col, #tbl td.hide-col { display:none !important; }
 
-    /* 重要：stickyヘッダーが効くスクロール枠 */
+    /* --- 縦スクロールでもヘッダー固定にするためのスクロール枠 --- */
     .tablewrap{
       overflow:auto;
       -webkit-overflow-scrolling: touch;
-      position: relative;
-      max-height: 70vh;            /* 縦スクロールをここで発生させる */
-      border-radius: 14px;
+      position: relative;          /* sticky の基準 */
+      max-width: 100%;
+      max-height: 70vh;            /* 縦スクロール枠 */
+      border-radius: 12px;
     }
 
-    /* styles.css で #tbl は min-width:100% + width:max-content になってる前提 */
+    /* sticky が崩れにくい */
     #tbl{
       border-collapse: separate;
       border-spacing: 0;
+      width: max-content;          /* 横に伸びる */
+      min-width: 100%;
+      background: #fff;
     }
 
-    /* 列ヘッダー固定（styles.css にもあるが、index側で強めに安定化） */
+    /* ヘッダー固定（縦スクロールでも固定される） */
     #tbl thead th{
       position: sticky;
       top: 0;
-      z-index: 50;
-      background: var(--thead-bg);
-      color: var(--thead-text);
-      background-clip: padding-box;
+      z-index: 10;
+      background: var(--thead-bg, #0b2a6f);
+      color: var(--thead-text, #fff);
+      box-shadow: 0 1px 0 rgba(0,0,0,.08);
     }
 
-    /* 行ヘッダー（園名列）固定 */
+    /* 左端（行ヘッダー＝園名列）固定 */
     #tbl th.col-name,
     #tbl td.col-name{
       position: sticky;
       left: 0;
-      z-index: 20;                /* bodyセルが他セルに負けない */
-      background: var(--surface);
-      box-shadow: 1px 0 0 rgba(0,0,0,.10);
-      background-clip: padding-box;
+      background: #fff;
     }
 
     /* 左上（園名ヘッダー）は最前面 */
     #tbl thead th.col-name{
-      z-index: 60;
-      background: var(--thead-bg);
-      color: var(--thead-text);
-      box-shadow: 1px 0 0 rgba(255,255,255,.15);
+      z-index: 20;
+      background: var(--thead-bg, #0b2a6f);
+      color: var(--thead-text, #fff);
     }
 
-    /* 園名セルは省略表示（行高を崩さない） */
+    /* 行ヘッダー（園名列）が“消える”対策 */
     #tbl td.col-name{
+      z-index: 6;
+      box-shadow: 1px 0 0 rgba(0,0,0,.08);
+    }
+
+    /* 園名列：省略 */
+    #tbl th.col-name{ min-width: 240px; }
+    #tbl td.col-name{
+      min-width: 240px;
+      max-width: 360px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 360px;
     }
 
-    /* 住所列：PCは1行省略（要望） */
+    /* 住所列：PCは1行省略表示 */
     @media (min-width: 769px){
       #tbl td.col-addr .cell-ellipsis{
-        display:inline-block;
-        max-width: 520px;          /* 好みで調整 */
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        display: inline-block;
+        max-width: 520px;
         vertical-align: top;
       }
     }
 
-    /* スマホ：園名列は120px固定（要望） */
+    /* スマホ：園名列だけ 120px（指定どおり） */
     @media (max-width: 768px){
-      .tablewrap{ max-height: 75vh; }
-      #tbl th.col-name{ min-width: 120px !important; width:120px !important; max-width:120px !important; }
-      #tbl td.col-name{ min-width: 120px !important; width:120px !important; max-width:120px !important; }
-      #tbl{ min-width: 720px; }   /* 横スクロール前提（表は維持） */
+      #tbl th.col-name{ min-width: 120px; }
+      #tbl td.col-name{ min-width: 120px; max-width: 120px; }
 
       .modebar .badge{ width:100%; margin-left:0; }
-      .scrollhint{ display:block; }
+      .scrollhint{ display:block; margin-top:8px; }
+
+      .tablewrap{ max-height: 75vh; }
     }
 
     .scrollhint{
       display:none;
       font-size: 12px;
       opacity: .8;
-      padding: 8px 2px 0 2px;
     }
 
-    /* 念のため：theadが消える系の事故を強制回避 */
-    #tbl thead{ display: table-header-group !important; }
-    #tbl tbody{ display: table-row-group !important; }
-    #tbl tr{ display: table-row !important; }
-    #tbl th, #tbl td{ display: table-cell !important; }
+    /* ===== thead が消える対策（styles.css の display:none 等を強制上書き） ===== */
+    #tbl thead { display: table-header-group !important; }
+    #tbl tbody { display: table-row-group !important; }
+    #tbl tr    { display: table-row !important; }
+
+    /* ★ここが今回の肝：
+       - 「table-cell !important」を hide-col 以外だけに限定し、hide-col を殺さない */
+    #tbl th:not(.hide-col),
+    #tbl td:not(.hide-col){
+      display: table-cell !important;
+    }
+    /* hide-col は最優先で消す（上の table-cell に負けない） */
+    #tbl th.hide-col,
+    #tbl td.hide-col{
+      display: none !important;
+    }
   </style>
 </head>
 
@@ -156,14 +174,14 @@
     <table id="tbl">
       <thead>
         <tr>
-          <th data-col="name" class="col-name" style="min-width:240px;">園名</th>
-          <th data-col="station" style="min-width:140px;">最寄り駅</th>
+          <th data-col="name" class="col-name">園名</th>
+          <th data-col="station" style="min-width:120px;">最寄り駅</th>
           <th data-col="walk" style="min-width:80px;">徒歩</th>
 
           <th data-col="accept" style="min-width:90px;">受入（合計）</th>
           <th data-col="wait" style="min-width:90px;">待ち（合計）</th>
-          <th data-col="dwait" style="min-width:100px;">前月比 待ち</th>
-          <th data-col="dacc" style="min-width:100px;">前月比 受入</th>
+          <th data-col="dwait" style="min-width:110px;">前月比 待ち</th>
+          <th data-col="dacc" style="min-width:110px;">前月比 受入</th>
 
           <th data-col="a0a" class="agecol" style="min-width:80px;">0 受入</th>
           <th data-col="a0w" class="agecol" style="min-width:80px;">0 待ち</th>
@@ -171,16 +189,17 @@
           <th data-col="a1w" class="agecol" style="min-width:80px;">1 待ち</th>
           <th data-col="a2a" class="agecol" style="min-width:80px;">2 受入</th>
           <th data-col="a2w" class="agecol" style="min-width:80px;">2 待ち</th>
-          <th data-col="a35a" class="agecol" style="min-width:80px;">3-5 受入</th>
-          <th data-col="a35w" class="agecol" style="min-width:80px;">3-5 待ち</th>
+          <th data-col="a35a" class="agecol" style="min-width:90px;">3-5 受入</th>
+          <th data-col="a35w" class="agecol" style="min-width:90px;">3-5 待ち</th>
 
-          <th data-col="addr" style="min-width:520px;">住所</th>
-          <th data-col="map" style="min-width:130px;">地図</th>
+          <th data-col="addr" style="min-width:320px;">住所</th>
+          <th data-col="map" style="min-width:140px;">地図</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
-    <div class="scrollhint">※ スマホは横にスクロールできます（園名列とヘッダーは固定）</div>
+
+    <div class="scrollhint">※ スマホは横にスクロールできます（園名列とヘッダーは固定されます）</div>
   </div>
 
   <div class="footer">
@@ -218,12 +237,14 @@ function setAgeColsVisible(v){
   document.querySelectorAll('.agecol').forEach(el=>{ el.style.display = v ? '' : 'none'; });
   document.getElementById('toggleCols').textContent = v ? '年齢別列：非表示' : '年齢別列：表示';
 }
+
 function signDelta(n){
   if(n==null) return `<span class="delta none">—</span>`;
   if(n>0) return `<span class="delta plus">+${n}</span>`;
   if(n<0) return `<span class="delta minus">${n}</span>`;
   return `<span class="delta zero">0</span>`;
 }
+
 function getGroups(f){
   if(f.age_groups) return f.age_groups;
   const ages = f.ages || f.ages_0_5 || {};
@@ -242,6 +263,7 @@ function getGroups(f){
     "3-5": {accept: sum3('accept'), wait: sum3('wait')}
   };
 }
+
 function stationKey(f){
   const sk = normalizeForSearch(f.station_kana || "");
   const st = normalizeForSearch((f.nearest_station || "").replace(/駅$/,''));
@@ -358,6 +380,7 @@ function buildWardOptions(facilities){
   }
   return Array.from(set).sort((a,b)=>a.localeCompare(b,'ja'));
 }
+
 function debounce(fn, ms=250){
   let t=null;
   return (...args)=>{
@@ -366,30 +389,32 @@ function debounce(fn, ms=250){
   };
 }
 
-/* 表示モード：列の非表示（1テーブルなので th/td だけ） */
+/* 表示モード：列の非表示（単一テーブル版） */
 const COMPACT_HIDE_COLS = new Set([
   "addr","map",
   "dwait","dacc",
   "a0a","a0w","a1a","a1w","a2a","a2w","a35a","a35w"
 ]);
+
 function isMobile(){ return window.matchMedia && window.matchMedia("(max-width: 768px)").matches; }
+
 function applyViewMode(mode){
   const hide = (mode === "compact");
 
-  // th
+  // head
   document.querySelectorAll("#tbl thead th").forEach(th=>{
     const c = th.getAttribute("data-col");
     if(!c) return;
     th.classList.toggle("hide-col", hide && COMPACT_HIDE_COLS.has(c));
   });
-
-  // td
+  // body
   document.querySelectorAll("#tbl tbody td").forEach(td=>{
     const c = td.getAttribute("data-col");
     if(!c) return;
     td.classList.toggle("hide-col", hide && COMPACT_HIDE_COLS.has(c));
   });
 
+  // compact では年齢列も強制OFF（一覧性優先）
   if(mode === "compact"){ setAgeColsVisible(false); }
 }
 
@@ -400,6 +425,7 @@ async function main(){
   const monthSel = document.getElementById('monthSelect');
   monthSel.innerHTML = ms.map(m=>`<option value="${m}">${m}</option>`).join('');
 
+  // restore from URL
   const pMonth = getParam('month');
   const pQ     = getParam('q');
   const pWard  = getParam('ward');
@@ -448,6 +474,7 @@ async function main(){
       wards.map(w=>`<option value="${w}">${w}</option>`).join('');
     wardSel.value = wards.includes(curWard) ? curWard : "";
 
+    // KPI（全体）
     const totWait = (data.facilities||[]).reduce((s,f)=>s+Number(f.totals?.wait||0),0);
     const totAcc  = (data.facilities||[]).reduce((s,f)=>s+Number(f.totals?.accept||0),0);
 
@@ -463,6 +490,7 @@ async function main(){
       <div class="pill">対象：${safeStr(data.ward||"横浜市")}</div>
     `;
 
+    // filter + sort
     const q = qEl.value.trim();
     const sort = sortEl.value;
     const wardFilter = wardSel.value;
@@ -476,16 +504,16 @@ async function main(){
     if(q){
       arr = arr.filter(f => matchQuery(f, q));
     }
+
     arr = sortFacilities(arr, sort);
 
     document.getElementById('countLabel').textContent =
       `${arr.length.toLocaleString('ja-JP')} / ${totalCount.toLocaleString('ja-JP')}`;
 
-    // render body
     const tbody = document.querySelector('#tbl tbody');
     tbody.innerHTML = arr.map(f => rowHTML(f, prevMap.get(String(f.id)))).join('');
 
-    // apply view (after body render)
+    // apply view
     let view = viewSel.value;
     if(view === "auto"){ view = isMobile() ? "compact" : "full"; }
     applyViewMode(view);
