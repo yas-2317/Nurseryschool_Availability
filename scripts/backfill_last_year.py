@@ -19,7 +19,7 @@ from openpyxl import load_workbook
 CITY_PAGE = "https://www.city.yokohama.lg.jp/kosodate-kyoiku/hoiku-yoji/shisetsu/riyou/info/nyusho-jokyo.html"
 
 WARD_FILTER = (os.getenv("WARD_FILTER", "") or "").strip() or None
-MONTHS_BACK = int(os.getenv("MONTHS_BACK", "12"))
+MONTHS_BACK = int(os.getenv("MONTHS_BACK", "24"))
 FORCE = (os.getenv("FORCE_BACKFILL", "0") == "1")
 
 # master を backfill 時点で注入する（1推奨）
