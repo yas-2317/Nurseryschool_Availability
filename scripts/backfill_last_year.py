@@ -25,9 +25,6 @@ FORCE = (os.getenv("FORCE_BACKFILL", "0") == "1")
 # master を backfill 時点で注入する（1推奨）
 APPLY_MASTER = (os.getenv("APPLY_MASTER", "1") == "1")
 
-# month推定のログ（必要な時だけ 1）
-DEBUG_MONTH = (os.getenv("DEBUG_MONTH", "0") == "1")
-
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -105,112 +102,98 @@ def sanitize_header(header: List[str]) -> List[str]:
     return out
 
 
-# ---------- month extraction ----------
-def extract_month_from_text(text: str) -> Optional[str]:
+def _z2h(s: str) -> str:
+    return s.translate(str.maketrans("０１２３４５６７８９／．", "0123456789/."))
+
+
+def _reiwa_to_year(ry: int) -> int:
+    # Reiwa 1 = 2019
+    return 2018 + ry
+
+
+def extract_month_from_text(text: str, base_year_hint: Optional[int] = None) -> Optional[str]:
     """
-    例: '【令和８年２月１日時点】' → 2026-02-01
+    いろんな表記を 2024-04-01 形式に正規化する
+
+    対応例:
+      - 【令和８年２月１日時点】
+      - 令和6年4月1日
+      - 令和6.4.1 / 令和６．４．１
+      - R6.4.1 / R06.04.01
+      - 2024年4月1日 / 2024/4/1 / 2024.4.1
+      - （年がない）4月1日 -> base_year_hint がある時のみ
     """
     if not text:
         return None
-    t = str(text)
-    z2h = str.maketrans("０１２３４５６７８９", "0123456789")
-    t = t.translate(z2h)
 
-    m = re.search(r"令和\s*([0-9]+)\s*年\s*([0-9]+)\s*月\s*1\s*日", t)
+    t = _z2h(str(text))
+
+    # 1) 令和X年Y月1日
+    m = re.search(r"令和\s*([0-9]{1,2})\s*年\s*([0-9]{1,2})\s*月\s*1\s*日", t)
     if m:
         ry = int(m.group(1))
         mm = int(m.group(2))
-        y = 2018 + ry  # Reiwa 1 = 2019
-        return date(y, mm, 1).isoformat()
+        return date(_reiwa_to_year(ry), mm, 1).isoformat()
 
+    # 2) 令和X.Y.1 / 令和X/ Y / 1
+    m = re.search(r"令和\s*([0-9]{1,2})\s*[./-]\s*([0-9]{1,2})\s*[./-]\s*1\b", t)
+    if m:
+        ry = int(m.group(1))
+        mm = int(m.group(2))
+        return date(_reiwa_to_year(ry), mm, 1).isoformat()
+
+    # 3) R6.4.1 / R06.04.01
+    m = re.search(r"\bR\s*0*([0-9]{1,2})\s*[./-]\s*0*([0-9]{1,2})\s*[./-]\s*0*1\b", t, flags=re.I)
+    if m:
+        ry = int(m.group(1))
+        mm = int(m.group(2))
+        return date(_reiwa_to_year(ry), mm, 1).isoformat()
+
+    # 4) YYYY年M月1日
     m = re.search(r"([0-9]{4})\s*年\s*([0-9]{1,2})\s*月\s*1\s*日", t)
     if m:
         y = int(m.group(1))
         mm = int(m.group(2))
         return date(y, mm, 1).isoformat()
 
-    # 2024/4/1, 2024-4-1 等も拾う（保険）
-    m = re.search(r"([0-9]{4})[/-]([0-9]{1,2})[/-]1", t)
+    # 5) YYYY/M/1 or YYYY.M.1 or YYYY-M-1
+    m = re.search(r"\b([0-9]{4})\s*[./-]\s*([0-9]{1,2})\s*[./-]\s*1\b", t)
     if m:
         y = int(m.group(1))
         mm = int(m.group(2))
         return date(y, mm, 1).isoformat()
 
-    return None
-
-
-def extract_fiscal_year_start_from_text(text: str) -> Optional[int]:
-    """
-    '令和6年度' → 2024 を返す（年度開始年）
-    """
-    if not text:
-        return None
-    t = str(text)
-    z2h = str.maketrans("０１２３４５６７８９", "0123456789")
-    t = t.translate(z2h)
-
-    # 令和6年度
-    m = re.search(r"令和\s*([0-9]+)\s*年度", t)
-    if m:
-        ry = int(m.group(1))
-        return 2018 + ry  # Reiwa1=2019
-
-    # R6年度 / r6年度
-    m = re.search(r"[Rr]\s*([0-9]+)\s*年度", t)
-    if m:
-        ry = int(m.group(1))
-        return 2018 + ry
-
-    # 2024年度
-    m = re.search(r"([0-9]{4})\s*年度", t)
-    if m:
-        return int(m.group(1))
+    # 6) 年なし: 4月1日（base_year_hint がある時のみ）
+    if base_year_hint:
+        m = re.search(r"\b([0-9]{1,2})\s*月\s*1\s*日", t)
+        if m:
+            mm = int(m.group(1))
+            return date(int(base_year_hint), mm, 1).isoformat()
+        m = re.search(r"\b([0-9]{1,2})\s*[./-]\s*1\b", t)
+        if m:
+            mm = int(m.group(1))
+            return date(int(base_year_hint), mm, 1).isoformat()
 
     return None
 
 
-def extract_month_number_from_text(text: str) -> Optional[int]:
-    """
-    '4月' '４月１日' '4月1日' などから月(1-12)を返す
-    """
-    if not text:
-        return None
-    t = str(text)
-    z2h = str.maketrans("０１２３４５６７８９", "0123456789")
-    t = t.translate(z2h)
-
-    m = re.search(r"([0-9]{1,2})\s*月", t)
-    if m:
-        mm = int(m.group(1))
-        if 1 <= mm <= 12:
-            return mm
-
-    # 4/1 や 4-1 のような表記（年が無い）を拾う（保険）
-    m = re.search(r"\b([0-9]{1,2})[/-]1\b", t)
-    if m:
-        mm = int(m.group(1))
-        if 1 <= mm <= 12:
-            return mm
-
-    return None
-
-
-def infer_month_from_fy_and_mm(fy_start: int, mm: int) -> str:
-    # FYは4月始まり：4-12はfy_start年、1-3はfy_start+1年
-    y = fy_start if mm >= 4 else (fy_start + 1)
-    return date(y, mm, 1).isoformat()
-
-
-def detect_month_from_rows(rows: List[Dict[str, str]]) -> Optional[str]:
+def detect_month_from_rows(rows: List[Dict[str, str]], base_year_hint: Optional[int] = None) -> Optional[str]:
     if not rows:
         return None
+    # 更新日/日時っぽい列がある場合
     for k in ("更新日", "更新年月日", "更新日時", "更新年月"):
         v = str(rows[0].get(k, "")).strip()
         if v:
-            v = v[:10].replace("/", "-")
+            v2 = _z2h(v[:20])
+            # まず extract に投げる
+            m = extract_month_from_text(v2, base_year_hint=base_year_hint)
+            if m:
+                return m
+            # 2024-04-01 / 2024/04/01 っぽい場合のフォールバック
+            v2 = v2.replace("/", "-")
             try:
-                y, m, _ = v.split("-")
-                return date(int(y), int(m), 1).isoformat()
+                y, m2, _ = v2.split("-")
+                return date(int(y), int(m2), 1).isoformat()
             except Exception:
                 return None
     return None
@@ -240,9 +223,6 @@ def as_int_str(x: Any) -> Optional[str]:
 
 
 def apply_master_to_facility(f: Dict[str, Any], m: Dict[str, str]) -> int:
-    """
-    master に値がある項目だけ注入する（空で上書きしない）
-    """
     updated = 0
     mapping = {
         "address": "address",
@@ -278,9 +258,6 @@ def apply_master_to_facility(f: Dict[str, Any], m: Dict[str, str]) -> int:
 
 # ---------- scraping ----------
 def scrape_excel_urls() -> Dict[str, List[str]]:
-    """
-    横浜市ページから Excel リンク（.xls/.xlsx/.xlsm）を頑丈に拾って分類する
-    """
     html = requests.get(CITY_PAGE, timeout=30).text
     soup = BeautifulSoup(html, "html.parser")
 
@@ -370,53 +347,49 @@ def find_header_index(rows: List[List[Any]]) -> Optional[int]:
     return best_i
 
 
-def _debug_month(msg: str) -> None:
-    if DEBUG_MONTH:
-        print("[DEBUG_MONTH]", msg)
+def infer_base_year_from_workbook(wb) -> Optional[int]:
+    """
+    wb全体から「年」を推定する。
+    - 令和x年 / 令和x.x.1 / R6.4.1 / 2024/4/1 などがどこかにあれば年を取る
+    """
+    candidates: List[int] = []
+
+    for ws in wb.worksheets[:20]:
+        # sheet title
+        m = extract_month_from_text(ws.title)
+        if m:
+            candidates.append(int(m[:4]))
+        # top cells
+        rows = sheet_to_rows(ws)
+        for r in rows[:10]:
+            for v in r[:10]:
+                m = extract_month_from_text("" if v is None else str(v))
+                if m:
+                    candidates.append(int(m[:4]))
+    if not candidates:
+        return None
+    # 最頻出年を返す
+    from collections import Counter
+    y = Counter(candidates).most_common(1)[0][0]
+    return y
 
 
-def parse_sheet(ws, url_hint: str = "") -> Tuple[Optional[str], List[Dict[str, str]]]:
+def parse_sheet(ws, base_year_hint: Optional[int]) -> Tuple[Optional[str], List[Dict[str, str]]]:
     rows = sheet_to_rows(ws)
 
-    # 1) まずは通常の「令和8年2月1日」等
-    month = extract_month_from_text(ws.title)
+    # 1) month detect (title / early cells)
+    month = extract_month_from_text(ws.title, base_year_hint=base_year_hint)
     if month is None:
         for r in rows[:20]:
             for v in r[:10]:
-                month = extract_month_from_text("" if v is None else str(v))
+                month = extract_month_from_text("" if v is None else str(v), base_year_hint=base_year_hint)
                 if month:
                     break
             if month:
                 break
 
-    # 2) ★追加：年度（令和○年度）+ 月（○月）から推定
-    if month is None:
-        fy = extract_fiscal_year_start_from_text(ws.title)
-        mm = extract_month_number_from_text(ws.title)
-
-        if fy is None or mm is None:
-            for r in rows[:30]:
-                for v in r[:12]:
-                    s = "" if v is None else str(v)
-                    if fy is None:
-                        fy = extract_fiscal_year_start_from_text(s)
-                    if mm is None:
-                        mm = extract_month_number_from_text(s)
-                    if fy is not None and mm is not None:
-                        break
-                if fy is not None and mm is not None:
-                    break
-
-        if fy is not None and mm is not None:
-            month = infer_month_from_fy_and_mm(fy, mm)
-            _debug_month(f"{url_hint} / sheet='{ws.title}' inferred by FY+MM => {month} (fy_start={fy}, mm={mm})")
-        else:
-            _debug_month(f"{url_hint} / sheet='{ws.title}' could not infer FY+MM (fy={fy}, mm={mm})")
-
-    # 3) header推定
     hidx = find_header_index(rows)
     if hidx is None:
-        _debug_month(f"{url_hint} / sheet='{ws.title}' header not found, month={month}")
         return month, []
 
     header = sanitize_header([("" if v is None else str(v)) for v in rows[hidx]])
@@ -434,39 +407,34 @@ def parse_sheet(ws, url_hint: str = "") -> Tuple[Optional[str], List[Dict[str, s
         d = {header[i]: vals[i] if i < len(vals) else "" for i in range(len(header))}
         out.append(d)
 
-    # 4) rowsから更新日等で month が取れるなら上書き
-    m2 = detect_month_from_rows(out)
+    # 2) month detect (row metadata)
+    m2 = detect_month_from_rows(out, base_year_hint=base_year_hint)
     if m2:
-        if month and month != m2:
-            _debug_month(f"{url_hint} / sheet='{ws.title}' month override {month} -> {m2} (from rows)")
         month = m2
-
-    if DEBUG_MONTH and (month is None):
-        _debug_month(f"{url_hint} / sheet='{ws.title}' final month is None (rows={len(out)})")
 
     return month, out
 
 
 def read_xlsx(url: str) -> Dict[str, List[Dict[str, str]]]:
-    """
-    xlsx 1ファイル → {month: rows} を返す（同月が複数シートなら後勝ち）
-    """
     print("download:", url)
     r = requests.get(url, timeout=120)
     r.raise_for_status()
     wb = load_workbook(io.BytesIO(r.content), data_only=True)
 
+    base_year_hint = infer_base_year_from_workbook(wb)
+
     mp: Dict[str, List[Dict[str, str]]] = {}
     for ws in wb.worksheets:
-        month, rows = parse_sheet(ws, url_hint=url)
+        month, rows = parse_sheet(ws, base_year_hint=base_year_hint)
         if month and rows:
             mp[month] = rows
 
     if mp:
         rng = (sorted(mp.keys())[0], sorted(mp.keys())[-1])
-        print("  parsed months:", len(mp), "range:", rng)
+        print("  parsed months:", len(mp), "range:", rng, "base_year_hint:", base_year_hint)
     else:
-        print("  parsed months: 0")
+        print("  parsed months: 0", "base_year_hint:", base_year_hint)
+
     return mp
 
 
@@ -639,12 +607,7 @@ def main() -> None:
 
     available = [m for m in want if m in acc_by_month]
     missing = [m for m in want if m not in acc_by_month]
-    print("want months:", len(want), "available:", len(available), "missing:", missing)
-
-    # FY2024が取れているかの簡易確認（デバッグ）
-    if DEBUG_MONTH:
-        have = sorted(acc_by_month.keys())
-        print("[DEBUG_MONTH] acc_by_month months sample:", have[:10], "...", have[-10:])
+    print("want months:", len(want), "available:", len(available), "missing:", missing[:20], ("..." if len(missing) > 20 else ""))
 
     existing_months: List[str] = []
     if MONTHS_JSON.exists():
@@ -664,6 +627,10 @@ def main() -> None:
         accept_rows = acc_by_month.get(m, [])
         wait_rows = wai_by_month.get(m, [])
         enrolled_rows = enr_by_month.get(m, [])
+
+        if not accept_rows:
+            print("skip (no accept rows):", m)
+            continue
 
         fid_a = guess_facility_id_key(accept_rows)
         A = index_by_key(accept_rows, fid_a)
