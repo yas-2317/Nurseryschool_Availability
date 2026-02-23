@@ -347,37 +347,81 @@ function signDelta(n){
   return `<span class="delta zero">0</span>`;
 }
 
-function makeSparkline(values, {width=260, height=60}={}){
+function makeSparkline(values, labels, {width=300, height=150}={}){
   const xs = values.map(v => (v==null ? null : Number(v)));
   const clean = xs.filter(v => v!=null && isFinite(v));
   if(clean.length < 2) return `<div class="small">—</div>`;
-  const min = Math.min(...clean);
-  const max = Math.max(...clean);
-  const pad = 6;
-  const w = width, h = height;
 
-  function y(v){
-    if(max===min) return h/2;
-    const t = (v - min) / (max - min);
-    return (h - pad) - t*(h - pad*2);
-  }
-  function x(i){
-    if(xs.length===1) return pad;
-    return pad + i*(w - pad*2)/(xs.length-1);
+  const dataMin = Math.min(...clean);
+  const dataMax = Math.max(...clean);
+
+  const padL = 36, padR = 8, padT = 8, padB = 42;
+  const plotW = width - padL - padR;
+  const plotH = height - padT - padB;
+
+  function niceStep(range){
+    if(range === 0) return 1;
+    const rough = range / 4;
+    const exp = Math.pow(10, Math.floor(Math.log10(rough)));
+    const f = rough / exp;
+    if(f < 1.5) return exp;
+    if(f < 3.5) return 2 * exp;
+    if(f < 7.5) return 5 * exp;
+    return 10 * exp;
   }
 
-  let d = '';
+  const step = niceStep(dataMax - dataMin || 1);
+  const yMin = Math.floor(dataMin / step) * step;
+  const yMax = Math.ceil(dataMax / step) * step;
+  const yRange = (yMax - yMin) || 1;
+
+  function yPx(v){ return padT + plotH - ((v - yMin) / yRange) * plotH; }
+  function xPx(i){ return xs.length === 1 ? padL + plotW/2 : padL + (i/(xs.length-1))*plotW; }
+
+  const yTicks = [];
+  for(let v = yMin; v <= yMax * 1.001; v += step) yTicks.push(Math.round(v));
+
+  const xLabelIdx = new Set([0, xs.length - 1]);
+  const xStep = Math.max(1, Math.round((xs.length - 1) / 4));
+  for(let i = xStep; i < xs.length - 1; i += xStep) xLabelIdx.add(i);
+
+  const parts = [];
+
+  // Y 軸グリッド + ラベル（人数）
+  yTicks.forEach(v => {
+    const py = yPx(v).toFixed(1);
+    parts.push(`<line x1="${padL}" y1="${py}" x2="${padL+plotW}" y2="${py}" stroke="rgba(0,0,0,.08)" stroke-width="1"/>`);
+    parts.push(`<text x="${padL-5}" y="${(+py+3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="rgba(0,0,0,.45)">${v}</text>`);
+  });
+
+  // 軸線
+  parts.push(`<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+plotH}" stroke="rgba(0,0,0,.2)" stroke-width="1"/>`);
+  parts.push(`<line x1="${padL}" y1="${padT+plotH}" x2="${padL+plotW}" y2="${padT+plotH}" stroke="rgba(0,0,0,.2)" stroke-width="1"/>`);
+
+  // X 軸ラベル（年月）
+  if(labels){
+    [...xLabelIdx].sort((a,b)=>a-b).forEach(i => {
+      const px = xPx(i).toFixed(1);
+      const baseY = padT + plotH;
+      const lbl = (labels[i]||'').substring(0,7);
+      parts.push(`<line x1="${px}" y1="${baseY}" x2="${px}" y2="${baseY+4}" stroke="rgba(0,0,0,.25)" stroke-width="1"/>`);
+      parts.push(`<text x="${px}" y="${baseY+9}" text-anchor="end" font-size="10" fill="rgba(0,0,0,.5)" transform="rotate(-40,${px},${baseY+9})">${lbl}</text>`);
+    });
+  }
+
+  // 折れ線
+  let pathD = '';
   let started = false;
   xs.forEach((v,i)=>{
     if(v==null || !isFinite(v)) return;
-    const px = x(i), py = y(v);
-    if(!started){ d += `M ${px} ${py}`; started = true; }
-    else { d += ` L ${px} ${py}`; }
+    const px = xPx(i).toFixed(1), py = yPx(v).toFixed(1);
+    if(!started){ pathD += `M ${px} ${py}`; started = true; }
+    else { pathD += ` L ${px} ${py}`; }
   });
+  parts.push(`<path d="${pathD}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`);
 
-  return `
-  <svg class="spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="sparkline">
-    <path d="${d}" fill="none" stroke="currentColor" stroke-width="2" />
+  return `<svg class="spark" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="sparkline">
+    ${parts.join('\n    ')}
   </svg>`;
 }
 
@@ -524,10 +568,11 @@ async function main(){
 
   // sparkline
   const lastN = hist.slice(Math.max(0, hist.length-24));
-  const waitSeries = lastN.map(x => Number(x.fac.totals?.wait ?? 0));
-  const accSeries  = lastN.map(x => Number(x.fac.totals?.accept ?? 0));
-  document.getElementById('sparkWait').innerHTML = makeSparkline(waitSeries);
-  document.getElementById('sparkAcc').innerHTML  = makeSparkline(accSeries);
+  const waitSeries   = lastN.map(x => Number(x.fac.totals?.wait ?? 0));
+  const accSeries    = lastN.map(x => Number(x.fac.totals?.accept ?? 0));
+  const monthLabels  = lastN.map(x => x.month);
+  document.getElementById('sparkWait').innerHTML = makeSparkline(waitSeries, monthLabels);
+  document.getElementById('sparkAcc').innerHTML  = makeSparkline(accSeries, monthLabels);
 
   // history tables
   const limitSel = document.getElementById('limitSel');
